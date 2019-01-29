@@ -6,12 +6,12 @@
 var express = require("express");
 var http = require("http");
 var io = require("socket.io");
-var shared = require('./htmlSpencers/js/shared.js'); //get shared functions
+var shared = require('./MooseServer/js/shared.js'); //get shared functions
 
 //const spawn = require("child_process").spawn;
 
 var app = express();
-app.use(express.static("./htmlSpencers")); //working directory
+app.use(express.static("./MooseServer")); //working directory
 //Specifying the public folder of the server to make the html accesible using the static middleware
 
 var socket = 8080;
