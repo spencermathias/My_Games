@@ -96,6 +96,8 @@ var ctx = canvas.getContext("2d");
 //console.log('ctx', ctx);
 //console.log(canvas.width, canvas.height);
 
+
+
 class Button {
 	constructor(x, y, width, height, text = "button", fillColor, outlineColor, textColor, textOutlineColor, fontSize = 50, textSlant = false){
 		this.updateSize(x,y,width,height);

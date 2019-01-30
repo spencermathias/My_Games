@@ -372,6 +372,8 @@ function updateBoard(socketSend, titleColor, showBoard) { //switches between tit
 function sendBoardState(){
 	io.sockets.emit("boardState", boardState);
 }
+let cards1 = new shared.Deck({owner:["deck"],mean:['U','D','L','R','N','N','N','N'],dif:['U','D','R','L']})
+
 
 function makeTiles() { //TODO: integrate into make deck class
     var cards = [];
