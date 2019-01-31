@@ -19,6 +19,10 @@ class Deck{
 		this.totalCards = constants.shift() //first number is the total number of cards
 			
 		this.divConstants = constants //CONST
+		//this.owner='Deck'
+		this.pile =[]
+		for( let i = 0;i<this.totalCards;i++){this.pile.push(i);}
+		this.shuffle(5)
 	}
 	
 	getProperties(cardNum){
@@ -40,9 +44,42 @@ class Deck{
 		
 		return cardProp
 	}
+
+	getWholeDeck(){
+		var wholeDeck=[]
+		for(let cardNum = 0; cardNum < this.totalCards; cardNum++){
+			wholeDeck.push(this.getProperties(cardNum))
+		}
+		return wholeDeck
+	}
+
+	shuffle(n=1){
+		while(n){
+			let m = this.pile.length, i;
+			while(m){
+				i = Math.floor(Math.random() * m--);
+				[this.pile[m],this.pile[i]]=[this.pile[i],this.pile[m]]
+			}
+			n--
+		}
+	}
+	
+	dealHand(n){
+		let hand=[]
+		while(n){
+			hand.push(this.pile.pop());n--;
+		}
+		return hand
+	}
+
+	returncard(cardID){
+		let index = Math.floor(Math.random()*this.pile.length)
+		this.pile.spice(index,0,cardID)
+	}
+
 }
 
-//try/catch to allow use on client and server side
+/*try/catch to allow use on client and server side
 try {
 	module.exports = Deck
 } catch (err){
@@ -50,7 +87,7 @@ try {
 } 
 
 //let a = new Deck({suit:['♥','♦','♣','♠'], number:['A',2,3,4,5,6,7,8,9,10,'J','Q','K']}) //MSB->LSB
-/*
+
 let c = []
 for(let b = 0; b<52; b++){
 	c.push(a.getProperties(b))

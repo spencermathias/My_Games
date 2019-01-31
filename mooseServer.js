@@ -33,7 +33,7 @@ var boardRows = 9;
 var boardColumns = 9;
 var boardState = [];
 
-var tiles = [];
+//var tiles = [];
 var allTiles = [];
 
 var gameMode = {
@@ -249,7 +249,7 @@ function gameStart() {
 	allClients.forEach(function(client){ 
 		if(client.userData.ready){
 			client.userData.statusColor = notYourTurnColor;
-			client.userData.tiles = [];
+			client.userData.cards = [];
 			client.userData.score = 0;
 			//client.userData.skippedTurn = false;
 			players.push(client);
@@ -264,19 +264,22 @@ function gameStart() {
 
 	//console.log(__line,players[currentTurn%players.length].userData.userName + " starts the game!");
 	//message(io.sockets, players[currentTurn%players.length].userData.userName + " starts the game!", gameColor);
-	
-    tiles = makeTiles(); //deck to deal to players
+	var cards = new shared.Deck({owner:["deck"],mean:['U','D','L','R','N','N','N','N'],dif:['U','D','R','L']})
+    //tiles = makeTiles(); //deck to deal to players
 	//console.log(__line, "cards", tiles);
-	allTiles = [];
+	/*allTiles = [];
 	for(var i =0; i < tiles.length; i++){
 		allTiles.push(tiles[i]); //deck to reference cards
-	}
-	io.sockets.emit("allTiles", allTiles);
+	}*/
+	//io.sockets.emit("allTiles", allTiles);
 	//console.log(__line, "alltiles", allTiles);
-	
+
 	players.forEach(function(player) {
 		//player.userData.tiles = [];
-		dealTiles(player, shared.numberOfTilesForHand);
+		//dealTiles(player, shared.numberOfTilesForHand);
+		player.userData.tiles.push(cards.dealHand(shared.numberOfTilesForHand))
+		console.log("tiles", player.userData.tiles)
+		player.emit("tiles", player.userData.tiles)
 		//console.log(__line, "player", player.userData.name,player.userData.tiles);
 	});
 	
@@ -372,9 +375,8 @@ function updateBoard(socketSend, titleColor, showBoard) { //switches between tit
 function sendBoardState(){
 	io.sockets.emit("boardState", boardState);
 }
-let cards1 = new shared.Deck({owner:["deck"],mean:['U','D','L','R','N','N','N','N'],dif:['U','D','R','L']})
 
-
+/*
 function makeTiles() { //TODO: integrate into make deck class
     var cards = [];
 	var i;
@@ -415,13 +417,14 @@ function makeTiles() { //TODO: integrate into make deck class
     cards.push({owner: "deck", options: {green: 'RR', blue: ''}, id: tileId++});
 
     return cards;
-}
-
+}*/
+/*
 function dealTiles(player, amountToBeDelt) {
 	var tileToGive;
 	var i;
+
 	for( i = 0; i < amountToBeDelt; i+=1) {
-		if(tiles.length > 0){
+		if(allTiles.length > 0){
 			tileToGive = chooseRandomTile();
 			tileToGive.owner = player.id;
 			player.userData.tiles.push(tileToGive);
@@ -431,14 +434,14 @@ function dealTiles(player, amountToBeDelt) {
 }
 
 function chooseRandomTile() {
-	if(tiles.length > 0){
+	if(allTiles.length > 0){
 		var index = Math.floor(Math.random() * tiles.length);
 		var returnTile = tiles[index];
-		tiles.splice(index, 1);
+		allTiles.splice(index, 1);
 		return returnTile;
 	}
 }
-
+*/
 function updateTurnColor(){
 	if(players.length > 0){
 		players.forEach(function(player){

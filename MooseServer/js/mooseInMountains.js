@@ -93,14 +93,15 @@ var scoreIsValid = false;
 
 var canvas = document.getElementById("gameBoard");
 var ctx = canvas.getContext("2d");
+var cards = new Deck({mean:['U','D','L','R','N','N','N','N'],dif:['U','D','R','L']})
 //console.log('ctx', ctx);
 //console.log(canvas.width, canvas.height);
-
 
 
 class Button {
 	constructor(x, y, width, height, text = "button", fillColor, outlineColor, textColor, textOutlineColor, fontSize = 50, textSlant = false){
 		this.updateSize(x,y,width,height);
+
 		this.fillColor = fillColor;
 		this.outlineColor = outlineColor;
 		this.textColor = textColor;
@@ -320,6 +321,66 @@ function arrowdraw(ctx,x,y,width,height,dr){
 	ctx.restore();
 }
 
+class doubleButton{
+	constructor(tileData, x,y,width,height,Deck){
+		var arrowb = '';
+		var arrowg = '';
+		this.tileData = Deck.getProperties(tileData);
+		this.tileData.ID=tileData
+		if (this.tileData.mean != 'N'){
+			arrowb=this.tileData.mean
+			arrowg=this.tileData.mean
+		}
+		
+		if(this.tileData.mean!=this.tileData.dif){
+			
+			switch(this.tileData.dif){
+				case 'U':
+					arrowg+='D';
+				break;
+				case 'R':
+					arrowg+='L';
+				break;
+				case 'D':
+					arrowg+='U';
+				break;
+				case 'L':
+					arrowg+='R';
+				break;
+			}
+		}else{arrowg=''}
+
+		if(arrowg!=''){if(arrowg[0]==arrowg[1]){
+			arrowb=''}else{arrowb=arrowb+this.tileData.dif}}
+			else{arrowb=arrowb+this.tileData.dif}
+		console.log(arrowb)
+		console.log(arrowg)
+		/*if(tileData != undefined){
+			cards.getproperties(tileData)
+			arrowb = cards.getproperties(tileData);
+			arrowg = tileData.options.green;
+			this.visible = true;
+		} else {
+			this.visible = false;
+		}
+		*/
+		this.subButtons = [
+			new ButtonHalf(x-width/4,y,width/2, height,'L',arrowb,'#0000ff','#000000','#000000',undefined,undefined),
+			new ButtonHalf(x+width/4,y,width/2, height,'R',arrowg,'#00ff00','#000000','#000000',undefined,undefined)
+		];
+		this.tileData = tileData;
+		this.highlightColor = "";
+	}
+	
+	drawOutline(color){ //TODO: move to sub buttons
+		this.highlightColor = color;
+	}
+	click(){
+		console.log("This button has not been overloaded yet!");
+		// send cardID to the server and option chosen
+	}
+}
+
 class ButtonHalf{
 	constructor(x, y, width, height, direction, shape = '', fillColor, outlineColor, shapeColor, textOutlineColor, fontSize = 50){
 		this.updateSize(x,y,width,height,direction);
@@ -382,30 +443,8 @@ class ButtonHalf{
 	
 }
 
-class doubleButton{
-	constructor(tileData, x,y,width,height,fontSize){
-		var arrowb = '';
-		var arrowg = '';
-		if(tileData != undefined){
-			arrowb = tileData.options.blue;
-			arrowg = tileData.options.green;
-			this.visible = true;
-		} else {
-			this.visible = false;
-		}
-		this.subButtons = [
-			new ButtonHalf(x-width/4,y,width/2, height,'L',arrowb,'#0000ff','#000000','#000000',undefined,fontSize),
-			new ButtonHalf(x+width/4,y,width/2, height,'R',arrowg,'#00ff00','#000000','#000000',undefined,fontSize)
-		];
-		this.tileData = tileData;
-		this.highlightColor = "";
-	}
-	
-	drawOutline(color){ //TODO: move to sub buttons
-		this.highlightColor = color;
-	}
-}
 
+/*
 class MoveTile extends Tile	{
 	constructor(tileData, x,y,width,height,fontSize){
 		super(tileData, x,y,width,height,fontSize);
@@ -432,7 +471,7 @@ class MoveTile extends Tile	{
 		//console.log("I am tile of number: " + this.tileData.number + " and Id: " + this.tileData.id, this);
 	}
 }
-
+*/
 class SubmitButton extends Button{
 	constructor(){
 		super(canvas.width/2, 60, tileWidth*4, tileHeight,"SUBMIT",'#0000ff',undefined,'#ffffff',undefined,tileFontSize,false)
@@ -540,7 +579,7 @@ class Board {
 			}
 			ctx.stroke();
 			var y = yMin;
-			for (var i = 0; i < this.rows; i++) {
+/*			for (var i = 0; i < this.rows; i++) {
 				var x = xMin;
 				for(var j = 0; j < this.columns; j++){
 					boardState[i][j].updateSize(x+this.columnThickness/2, y+this.rowThickness/2, tileWidth, tileHeight);
@@ -554,7 +593,7 @@ class Board {
 					x += this.columnThickness;
 				}
 				y += this.rowThickness;
-			}
+			}*/
 			ctx.restore();
 		}
 	}
@@ -700,10 +739,11 @@ socket.on('tiles', function(tiles){
 		}
 	}
 	myTiles = []; //delete my tiles
-	for(var i = 0; i < tiles.length; i++){
-		var tile = new doubleButton(tiles[i], (canvas.width/2) + (tileWidth*2 + 20) * (i-(tiles.length-1)/2) , canvas.height - (tileHeight + 20), tileWidth*2, tileHeight, tileFontSize);
-		tile.fillColor = newTileColor;
-		tile.drawOutline(placeholderColor); //placeholder outline
+	for(var i = 0; i < serverTiles[0].length; i++){
+		console.log(cards)
+		var tile = new doubleButton(tiles[0][i], (canvas.width/2) + (tileWidth*2 + 20) * (i-(tiles.length-1)/2) , canvas.height - (tileHeight + 20), tileWidth*2, tileHeight, cards);
+		//tile.fillColor = newTileColor;
+		//tile.drawOutline(placeholderColor); //placeholder outline
 		shapes[0].concat(tile.subButtons);//1st layer
 		myTiles.push(tile);
 	}
@@ -722,9 +762,9 @@ socket.on('boardState', function(recievedBoardState){
 			for(var row = 0; row < boardState.length; row++){
 				var line = [];
 				for(var col = 0; col < boardState[0].length; col++){
-					var tile = new MoveTile(newBlankTile(), 0, 0, tileHeight, tileWidth, tileFontSize);
-					tile.fillColor = newTileColor;
-					line.push(tile);
+					//var tile = new MoveTile(newBlankTile(), 0, 0, tileHeight, tileWidth, tileFontSize);
+					//tile.fillColor = newTileColor;
+					//line.push(tile);
 					//line.push(newBlankTile());
 				}
 				newState.push(line);
@@ -732,9 +772,9 @@ socket.on('boardState', function(recievedBoardState){
 		}
 	}
 	
-	updatePlayValidity();
+	//updatePlayValidity();
 });
-
+/*
 function updatePlayValidity(){
 	var check = validTilesToPlay(serverTiles, getTileData(newState), getTileData(boardState), allTiles);
 	if(check.error.length == 0){
@@ -745,7 +785,7 @@ function updatePlayValidity(){
 	scoreIsValid = check.error.length == 0;
 	//console.log("check", check);
 }
-
+*/
 function checkClick(event){
 	var foundClick = false;
 	var i;
@@ -801,15 +841,14 @@ function draw(){
 	//player tiles
 	for(var i = 0; i < myTiles.length; i++){
 		//if(myTurn){
-		if(scoreIsValid){
+		/*if(scoreIsValid){
 			myTiles[i].drawOutline(validPlayColor);
 		} else {
 			myTiles[i].drawOutline(invalidPlayColor);
-		}
-		//} else {
+		}*/		//} else {
 		//	myTiles[i].drawOutline('#444444'); //placeholder outline
 		//}
-	
+		
 		shapes[0] = shapes[0].concat( myTiles[i].subButtons );//1st layer
 	}
 	
@@ -913,7 +952,7 @@ function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
 	ctx.stroke();
   }
 }
-
+/*
 function polygon(ctx, x, y, radius, sides, startAngle, anticlockwise) {
 	if (sides < 3) return;
 	var a = (Math.PI * 2)/sides;
@@ -927,4 +966,4 @@ function polygon(ctx, x, y, radius, sides, startAngle, anticlockwise) {
 	}
 	ctx.closePath();
 	ctx.restore();
-}
+}*/
