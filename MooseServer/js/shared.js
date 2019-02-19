@@ -64,7 +64,7 @@ class Deck{
 		}
 	}
 	
-	dealHand(n){
+	deal(n=1){
 		let hand=[]
 		while(n){
 			hand.push(this.pile.pop());n--;

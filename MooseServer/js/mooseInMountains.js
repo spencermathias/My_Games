@@ -93,7 +93,8 @@ var scoreIsValid = false;
 
 var canvas = document.getElementById("gameBoard");
 var ctx = canvas.getContext("2d");
-var cards = new Deck({mean:['U','D','L','R','N','N','N','N'],dif:['U','D','R','L']})
+//var cards = new Deck({mean:['U','D','L','R','N','N'],dif:['U','D','R','L']})
+var cards = new Deck({mean:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0},0,0],dif:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0}]})
 //console.log('ctx', ctx);
 //console.log(canvas.width, canvas.height);
 
@@ -169,28 +170,37 @@ class Tile extends Button{
 	updateData(tileData){
 		this.tileData = tileData;
 		if(tileData != undefined){
-			this.text = this.tileData.number
-			this.visible = (this.tileData.number >= 0);
+			this.text = this.tileData
+			this.visible = (this.tileData >= 0);
 		}
 	}
 	
 	draw(ctx){
-		if(this.highlightColor != ""){
+		//if(this.highlightColor != ""){
 			//console.log(this.highlightColor);
-			ctx.save();
-			ctx.fillStyle = this.highlightColor;
-			roundRect(ctx, this.x-(this.width/2 + tilePadding), this.y-(this.height/2 + tilePadding), this.width+2*tilePadding, this.height+2*tilePadding, this.width/8,true, false);
-			ctx.restore();
-			this.highlightColor = "";
+			//ctx.save();
+			//ctx.fillStyle = this.highlightColor;
+			//roundRect(ctx, this.x-(this.width/2 + tilePadding), this.y-(this.height/2 + tilePadding), this.width+2*tilePadding, this.height+2*tilePadding, this.width/8,true, false);
+			//ctx.restore();
+			//this.highlightColor = "";
+		//}
+		//super.draw(ctx);
+		if(this.visible){
+			if(userList){
+				for( let i = 0; i<userList.length; i++){
+					if(userList[i].boardID == this.tileData){
+						drawPerson(ctx,this.x,this.y,90,90, userList[i].color);
+					}
+				}
+			}
 		}
-		super.draw(ctx);
 	}
 }
 
-function arrowdraw(ctx,x,y,width,height,dr){
+function arrowdraw(ctx,x,y,width,height,path){
 	ctx.save();	
 	var dotRadius = width*0.05;
-	if(dr.length == 0){
+	if(path.length == 0){
 		ctx.fillStyle='red';
 		ctx.beginPath();
 		ctx.moveTo(x,y);
@@ -201,7 +211,7 @@ function arrowdraw(ctx,x,y,width,height,dr){
 		ctx.restore();
 		return;
 	} 
-	//parse dr (directions)
+	//parse path (directions)
 	var dy = 0;
 	var dx = 0;
 	var miny = 0
@@ -209,8 +219,8 @@ function arrowdraw(ctx,x,y,width,height,dr){
 	var minx = 0
 	var maxx = 0
 	
-	for(var i = 0; i<dr.length; i++){
-		var c = dr[i];
+	for(var i = 0; i<path.length; i++){
+		var c = path[i];
 		switch(c){
 			case 'U':
 				dy -= 1;
@@ -261,8 +271,8 @@ function arrowdraw(ctx,x,y,width,height,dr){
 	//Lines
 	ctx.beginPath();
 	ctx.moveTo(curX,curY)
-	for(var i = 0; i<dr.length; i++){
-		var c = dr[i];
+	for(var i = 0; i<path.length; i++){
+		var c = path[i];
 		switch(c){
 			case 'U':ctx.lineTo(curX,curY-=oneArrowHeight);break;
 			case 'R':ctx.lineTo(curX+=oneArrowWidth,curY); break;
@@ -275,7 +285,7 @@ function arrowdraw(ctx,x,y,width,height,dr){
 	ctx.beginPath();
 	ctx.moveTo(curX,curY)
 	var wRatio = .7;
-	switch(dr[dr.length-1]){
+	switch(path[path.length-1]){
 		case 'U':
 			ctx.lineTo(curX-arrowLength*wRatio,curY);
 			ctx.lineTo(curX,curY-arrowLength);
@@ -301,10 +311,10 @@ function arrowdraw(ctx,x,y,width,height,dr){
 	ctx.fill();
 	//dots
 	
-	for(var i = dr.length-1; i>=0; i--){
+	for(var i = path.length-1; i>=0; i--){
 		ctx.beginPath();
 		ctx.fillStyle = 'black';
-		var c = dr[i];
+		var c = path[i];
 		switch(c){
 			case 'U':ctx.moveTo(curX,curY+=oneArrowHeight);break;
 			case 'R':ctx.moveTo(curX-=oneArrowWidth,curY); break;
@@ -321,40 +331,97 @@ function arrowdraw(ctx,x,y,width,height,dr){
 	ctx.restore();
 }
 
+function addcord(a,b,neg=1){let c=[]
+	let a1=[],b1=[]
+	if(a==0){a1.x=0;a1.y=0}else{a1=a}
+	if(b==0){b1.x=0;b1.y=0}else{b1=b}
+	c.x=a1.x+neg*b1.x
+	c.y=a1.y+neg*b1.y
+	return c
+}
+function cord2dpath(cord){
+	let path=''
+	for(i=0;i<Math.abs(cord.x);i++){
+		let c=Math.sign(cord.x)
+		if (c<0) {path+='L'
+		}else{if (c>0) {path+='R'}}
+	}
+	for(i=0;i<Math.abs(cord.y);i++){
+		let c=Math.sign(cord.y)
+		if (c<0) {path+='U'
+		}else{if (c>0) {path+='D'}}
+	}
+	return path
+}
+class paun{
+	constructor(Iconfilepath, x,y,width,height,startCord, color){
+		this.svg = document.getElementById("moose")
+		//this.original = (new XMLSerializer).serializeToString(this.svg)
+		//let colored1 = this.svg//.replace(/#D4AF37/g,'#ff0000')
+		this.image=new Image()
+		this.image.src= Iconfilepath;
+		
+
+		//this.image.src= this.svg;
+
+		this.updateSize(x,y,width,height)
+		this.x=startCord.x
+		this.y=startCord.y
+		//this.icon=Iconfilepath
+		this.visible=true
+		this.path=''
+	}
+
+	updateSize(x,y,width,height,direction){
+		this.locationX=x
+		this.locationY=y
+		this.width = width;
+		this.height = height;
+		this.clickArea = {minX: x - width/2, minY: y - height/2, maxX: x + width/2, maxY: y + height/2};
+	}
+
+	draw(ctx){
+		if(this.visible){
+			ctx.save();
+			//ctx.fillStyle = this.icon;
+			//ctx.strokeStyle = this.outlineColor;
+			//debugger;
+			//roundRect(ctx, this.clickArea.minX, this.clickArea.minY, this.width, this.height, this.radius, this.fillColor != undefined, this.outlineColor != undefined);
+			//this.image = document.getElementById(this)
+			
+			ctx.drawImage(this.image,this.locationX,this.locationY,this.width,this.height)
+			
+			ctx.restore();
+		}
+	}
+	move(direction){
+
+	}
+}
+
 class doubleButton{
 	constructor(tileData, x,y,width,height,Deck){
-		var arrowb = '';
-		var arrowg = '';
+		this.arrowbv = [];
+		this.arrowgv = [];
+		this.arrowb = '';
+		this.arrowg = '';
+
 		this.tileData = Deck.getProperties(tileData);
 		this.tileData.ID=tileData
-		if (this.tileData.mean != 'N'){
-			arrowb=this.tileData.mean
-			arrowg=this.tileData.mean
-		}
-		
-		if(this.tileData.mean!=this.tileData.dif){
-			
-			switch(this.tileData.dif){
-				case 'U':
-					arrowg+='D';
-				break;
-				case 'R':
-					arrowg+='L';
-				break;
-				case 'D':
-					arrowg+='U';
-				break;
-				case 'L':
-					arrowg+='R';
-				break;
-			}
-		}else{arrowg=''}
 
-		if(arrowg!=''){if(arrowg[0]==arrowg[1]){
-			arrowb=''}else{arrowb=arrowb+this.tileData.dif}}
-			else{arrowb=arrowb+this.tileData.dif}
-		console.log(arrowb)
-		console.log(arrowg)
+		this.arrowb=addcord(this.tileData.mean,this.tileData.dif)
+		this.arrowg=addcord(this.tileData.mean,this.tileData.dif,-1)
+		
+		if (cord2dpath(this.arrowb)!=''){
+			this.arrowb=cord2dpath(this.tileData.mean)+cord2dpath(this.tileData.dif)
+		}
+
+		if(cord2dpath(this.arrowg)!=''){
+			this.arrowg=cord2dpath(this.tileData.mean)+cord2dpath(addcord({x:0,y:0},this.tileData.dif,-1))
+		}
+
+		//console.log(this.arrowb)
+		//console.log(this.arrowg)
 		/*if(tileData != undefined){
 			cards.getproperties(tileData)
 			arrowb = cards.getproperties(tileData);
@@ -364,12 +431,14 @@ class doubleButton{
 			this.visible = false;
 		}
 		*/
+		
 		this.subButtons = [
-			new ButtonHalf(x-width/4,y,width/2, height,'L',arrowb,'#0000ff','#000000','#000000',undefined,undefined),
-			new ButtonHalf(x+width/4,y,width/2, height,'R',arrowg,'#00ff00','#000000','#000000',undefined,undefined)
+			new ButtonHalf(x-width/4,y,width/2, height,'L',this.arrowb,'#0000ff','#000000','#000000',undefined,undefined,this),
+			new ButtonHalf(x+width/4,y,width/2, height,'R',this.arrowg,'#00ff00','#000000','#000000',undefined,undefined,this)
 		];
 		this.tileData = tileData;
 		this.highlightColor = "";
+		
 	}
 	
 	drawOutline(color){ //TODO: move to sub buttons
@@ -382,7 +451,7 @@ class doubleButton{
 }
 
 class ButtonHalf{
-	constructor(x, y, width, height, direction, shape = '', fillColor, outlineColor, shapeColor, textOutlineColor, fontSize = 50){
+	constructor(x, y, width, height, direction, shape = {x:0,y:0}, fillColor, outlineColor, shapeColor, textOutlineColor, fontSize = 50,parent){
 		this.updateSize(x,y,width,height,direction);
 		this.fillColor = fillColor;
 		this.outlineColor = outlineColor;
@@ -533,11 +602,12 @@ class Board {
 		
 		for(var row = 0; row < recievedBoardState.length; row++){
 			for(var col = 0; col < recievedBoardState[0].length; col++){
-				if(boardState[row][col].tileData.id != recievedBoardState[row][col].id){
+				/*if(boardState[row][col].tileData.id != recievedBoardState[row][col].id){
 					boardState[row][col].fillColor = newServerTileColor;
 				} else {
 					boardState[row][col].fillColor = defaultTileColor;
 				}
+				*/
 				boardState[row][col].updateData(recievedBoardState[row][col]);
 			}
 		}
@@ -545,6 +615,7 @@ class Board {
 	
 	draw(ctx){
 		if (this.rows > 0 && this.columns >0){
+
 			ctx.save()
 			var bh = this.rows*this.rowThickness;
 			var bw = this.columns*this.columnThickness;
@@ -579,21 +650,22 @@ class Board {
 			}
 			ctx.stroke();
 			var y = yMin;
-/*			for (var i = 0; i < this.rows; i++) {
+			for (var i = 0; i < this.rows; i++) {
 				var x = xMin;
 				for(var j = 0; j < this.columns; j++){
 					boardState[i][j].updateSize(x+this.columnThickness/2, y+this.rowThickness/2, tileWidth, tileHeight);
-					newState[i][j].updateSize(x+this.columnThickness/2, y+this.rowThickness/2, tileWidth, tileHeight);
+					//newState[i][j].updateSize(x+this.columnThickness/2, y+this.rowThickness/2, tileWidth, tileHeight);
 					
-					if(newState[i][j].tileData.id != blankTile.id && boardState[i][j].tileData.id != blankTile.id){
+					/*if(newState[i][j].tileData.id != blankTile.id && boardState[i][j].tileData.id != blankTile.id){
 						newState[i][j].drawOutline('#ff0000');
-					}
-					shapes[1].push(newState[i][j]);//middle layer
+					}*/
+					//shapes[1].push(newState[i][j]);//middle layer
 					shapes[2].push(boardState[i][j]); //bottom layer
 					x += this.columnThickness;
 				}
 				y += this.rowThickness;
-			}*/
+			}
+			//drawPerson(ctx,this.x+this.columnThickness,this.y,90,90,'#ff0000');
 			ctx.restore();
 		}
 	}
@@ -676,6 +748,8 @@ var newServerTileColor = '#aae0b3';
 var myTurn = false;
 var myUserlistIndex = 0;
 var myUserlistString = "";
+var Moose=undefined
+Moose=new paun('../images/moose-clipart-Moose-Silhouette.svg',435,398,90,90,{x:5,y:5})
 
 socket.on("message",function(message){  
 	/*
@@ -739,9 +813,9 @@ socket.on('tiles', function(tiles){
 		}
 	}
 	myTiles = []; //delete my tiles
-	for(var i = 0; i < serverTiles[0].length; i++){
-		console.log(cards)
-		var tile = new doubleButton(tiles[0][i], (canvas.width/2) + (tileWidth*2 + 20) * (i-(tiles.length-1)/2) , canvas.height - (tileHeight + 20), tileWidth*2, tileHeight, cards);
+	for(var i = 0; i < serverTiles.length; i++){
+		//console.log(cards)
+		var tile = new doubleButton(tiles[i], (canvas.width/2) + (tileWidth*2 + 20) * (i-(tiles.length-1)/2) , canvas.height - (tileHeight + 20), tileWidth*2, tileHeight, cards);
 		//tile.fillColor = newTileColor;
 		//tile.drawOutline(placeholderColor); //placeholder outline
 		shapes[0].concat(tile.subButtons);//1st layer
@@ -853,9 +927,12 @@ function draw(){
 	}
 	
 	//selected outline
-	if(selected != undefined){
+	
+	if(Moose != undefined){
 		//debugger;
-		selected.drawOutline('#0000ff');
+		Moose.draw(ctx)
+
+		//selected.drawOutline('#0000ff');
 	}
 	
 	//button
@@ -967,3 +1044,46 @@ function polygon(ctx, x, y, radius, sides, startAngle, anticlockwise) {
 	ctx.closePath();
 	ctx.restore();
 }*/
+
+function drawPerson(ctx, x, y, width, height, color){
+	ctx.save();
+	//ctx.strokeStyle="rgba(0,0,0,0)";
+	ctx.miterLimit=4;
+	//ctx.font="normal normal 400 normal 15px / 21.4286px ''";
+	//ctx.font="   15px ";
+	ctx.translate(x-(width/2),y-(height/2));
+	ctx.scale(width/512, height/512);
+
+	//ctx.save();
+	//ctx.font="   15px ";
+	//ctx.save();
+	ctx.fillStyle=color;
+	//ctx.font="   15px ";
+	ctx.beginPath();
+	ctx.moveTo(250.882,22.802);
+	ctx.bezierCurveTo(227.516,25.837,206.329,53.246,206.329,88.737);
+	ctx.bezierCurveTo(206.329,108.295,213.1,125.593,223.024,137.552);
+	ctx.lineTo(234.864,151.815);
+	ctx.lineTo(216.647,155.239);
+	ctx.bezierCurveTo(203.747,157.664,194.289,164.479,186.204,175.575);
+	ctx.bezierCurveTo(178.119,186.672,171.938,202.133,167.606,219.95);
+	ctx.bezierCurveTo(159.763,252.23,158.038,291.643,157.764,326.386);
+	ctx.lineTo(200.632,326.386);
+	ctx.lineTo(212.403,484.222);
+	ctx.bezierCurveTo(242.297,490.97,274.214,490.732,303.005,484.247);
+	ctx.lineTo(313.419,326.387);
+	ctx.lineTo(354.235,326.387);
+	ctx.bezierCurveTo(354.208,291.218,353.758,251.261,346.651,218.737);
+	ctx.bezierCurveTo(342.733,200.803,336.793,185.365,328.611,174.394);
+	ctx.bezierCurveTo(320.426,163.424,310.531,156.649,296.048,154.405);
+	ctx.lineTo(277.456,151.525);
+	ctx.lineTo(289.192,136.821);
+	ctx.bezierCurveTo(298.687,124.924,305.124,107.824,305.124,88.739);
+	ctx.bezierCurveTo(305.124,50.901,281.469,22.895,255.725,22.895);
+	ctx.closePath();
+	ctx.fill();
+	//ctx.stroke();
+	//ctx.restore();
+	//ctx.restore();
+	ctx.restore();
+}

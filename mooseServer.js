@@ -29,8 +29,8 @@ var spectators = [];
 
 var currentTurn = 0;
 
-var boardRows = 9;
-var boardColumns = 9;
+var boardRows = 11;
+var boardColumns = 11;
 var boardState = [];
 
 //var tiles = [];
@@ -63,21 +63,26 @@ var notYourTurnColor = "#ffffff";
 var yourTurnColor = "#0000ff";
 
 
+var nextUserID=-1
+
 console.log("Server Started!");
 
 function defaultUserData(){
+	//nextUserID++
 	return {
 		userName: "Unknown",
 		tiles: [],
 		score: 0,
 		statusColor: notReadyColor,
 		ready: false,
-		skippedTurn: false
+		skippedTurn: false,
+		ID:nextUserID++
 	}
 }
 
 io.sockets.on("connection", function(socket) {
     socket.userData = defaultUserData();
+    console.log(nextUserID);
 
     allClients.push(socket);
     if (gameStatus === gameMode.LOBBY) {
@@ -262,29 +267,17 @@ function gameStart() {
 	updateBoard(io.sockets, readyTitleColor, true); //changes screen from lobby to board
 	currentTurn = Math.floor(Math.random()*players.length); //random starting person
 
-	//console.log(__line,players[currentTurn%players.length].userData.userName + " starts the game!");
-	//message(io.sockets, players[currentTurn%players.length].userData.userName + " starts the game!", gameColor);
-	var cards = new shared.Deck({owner:["deck"],mean:['U','D','L','R','N','N','N','N'],dif:['U','D','R','L']})
-    //tiles = makeTiles(); //deck to deal to players
-	//console.log(__line, "cards", tiles);
-	/*allTiles = [];
-	for(var i =0; i < tiles.length; i++){
-		allTiles.push(tiles[i]); //deck to reference cards
-	}*/
-	//io.sockets.emit("allTiles", allTiles);
-	//console.log(__line, "alltiles", allTiles);
-
+	//make deck to play with
+	var cards = new shared.Deck({mean:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0},0,0],dif:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0}]})
+    
+	//deal cards
 	players.forEach(function(player) {
-		//player.userData.tiles = [];
-		//dealTiles(player, shared.numberOfTilesForHand);
-		player.userData.tiles.push(cards.dealHand(shared.numberOfTilesForHand))
-		console.log("tiles", player.userData.tiles)
+		player.userData.tiles=cards.deal(shared.numberOfTilesForHand)
 		player.emit("tiles", player.userData.tiles)
 		//console.log(__line, "player", player.userData.name,player.userData.tiles);
 	});
 	
-	//console.log(__line, "cards", tiles);
-	//console.log(__line, "allTiles", allTiles);
+
 
 	updateTurnColor();
 	//wait for turn plays
@@ -302,8 +295,17 @@ function setUpBoard(){ //set all positions on the board to -1 to indicate no til
 		}
 		boardState.push(boardRow);
 	}
-	
 	//TODO: place starting pawns
+	let angle = (2*Math.PI)/(players.length)
+	
+	for(i = 0; i<players.length; i++){
+		//console.log(players[i].)
+		let yplace = Math.round(((boardRows-1)/2)*Math.cos(i*angle)+(boardRows-1)/2)
+		let xplace = Math.round(((boardRows-1)/2)*Math.sin(i*angle)+(boardRows-1)/2)
+		console.log('xplace',xplace,'yplace',yplace,'iangle',(i*angle))
+		boardState[xplace][yplace]=players[i].userData.ID
+	}
+	console.log(boardState)
 	sendBoardState();
 }
 
@@ -312,13 +314,13 @@ function nextTurn(){
 		gameEnd();
 	} else {
 		currentTurn = (currentTurn + 1) % players.length;
-		/*if(players[currentTurn].userData.tiles.length != 0){
+		if(players[currentTurn].userData.tiles.length != 0){
 			console.log("It is " + players[currentTurn].userData.userName + "'s turn!")
 			message(players[currentTurn], "It is your turn!", gameColor);
 		} else {
 			players[currentTurn].userData.skippedTurn = true;
 			nextTurn();
-		}*/
+		}
 	}
 }
 
@@ -354,6 +356,7 @@ function getUserSendData(client){
 	console.log(__line,"userName:", client.userData.userName, " |ready:", client.userData.ready, "|status:", client.userData.statusColor, "|score:", client.userData.score);
 	return{
 		id: client.id,
+		boardID: client.userData.ID,
 		userName: client.userData.userName,
 		color: client.userData.statusColor,
 		score: client.userData.score
@@ -376,72 +379,7 @@ function sendBoardState(){
 	io.sockets.emit("boardState", boardState);
 }
 
-/*
-function makeTiles() { //TODO: integrate into make deck class
-    var cards = [];
-	var i;
-	var tileId = 0;
 
-    cards.push({owner: "deck", options: {blue: 'DR', green: 'DL'}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'DR', blue: 'DL'}, id: tileId++});
-	
-	cards.push({owner: "deck", options: {blue: 'RU', green: 'RD'}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'RU', blue: 'RD'}, id: tileId++});
-	
-	cards.push({owner: "deck", options: {blue: 'LU', green: 'LD'}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'LU', blue: 'LD'}, id: tileId++});
-	
-	cards.push({owner: "deck", options: {blue: 'UR', green: 'UL'}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'UR', blue: 'UL'}, id: tileId++});
-	
-	cards.push({owner: "deck", options: {blue: 'L', green: 'R'}, id: tileId++});
-	cards.push({owner: "deck", options: {blue: 'L', green: 'R'}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'L', blue: 'R'}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'L', blue: 'R'}, id: tileId++});
-	
-	cards.push({owner: "deck", options: {blue: 'U', green: 'D'}, id: tileId++});
-	cards.push({owner: "deck", options: {blue: 'U', green: 'D'}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'U', blue: 'D'}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'U', blue: 'D'}, id: tileId++});
-	
-	cards.push({owner: "deck", options: {blue: 'DD', green: ''}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'DD', blue: ''}, id: tileId++});
-	
-	cards.push({owner: "deck", options: {blue: 'UU', green: ''}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'UU', blue: ''}, id: tileId++});
-	
-	cards.push({owner: "deck", options: {blue: 'LL', green: ''}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'LL', blue: ''}, id: tileId++});
-	
-	cards.push({owner: "deck", options: {blue: 'RR', green: ''}, id: tileId++});
-    cards.push({owner: "deck", options: {green: 'RR', blue: ''}, id: tileId++});
-
-    return cards;
-}*/
-/*
-function dealTiles(player, amountToBeDelt) {
-	var tileToGive;
-	var i;
-
-	for( i = 0; i < amountToBeDelt; i+=1) {
-		if(allTiles.length > 0){
-			tileToGive = chooseRandomTile();
-			tileToGive.owner = player.id;
-			player.userData.tiles.push(tileToGive);
-		}
-	}
-	player.emit("tiles", player.userData.tiles);
-}
-
-function chooseRandomTile() {
-	if(allTiles.length > 0){
-		var index = Math.floor(Math.random() * tiles.length);
-		var returnTile = tiles[index];
-		allTiles.splice(index, 1);
-		return returnTile;
-	}
-}
-*/
 function updateTurnColor(){
 	if(players.length > 0){
 		players.forEach(function(player){
