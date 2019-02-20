@@ -176,20 +176,21 @@ class Tile extends Button{
 	}
 	
 	draw(ctx){
-		//if(this.highlightColor != ""){
+		if(this.highlightColor != ""){
 			//console.log(this.highlightColor);
-			//ctx.save();
-			//ctx.fillStyle = this.highlightColor;
-			//roundRect(ctx, this.x-(this.width/2 + tilePadding), this.y-(this.height/2 + tilePadding), this.width+2*tilePadding, this.height+2*tilePadding, this.width/8,true, false);
-			//ctx.restore();
-			//this.highlightColor = "";
-		//}
+			ctx.save();
+			ctx.fillStyle = this.highlightColor;
+			roundRect(ctx, this.x-(this.width/2 + tilePadding), this.y-(this.height/2 + tilePadding), this.width+2*tilePadding, this.height+2*tilePadding, this.width/8,true, false);
+			ctx.restore();
+			this.highlightColor = "";
+		}
 		//super.draw(ctx);
 		if(this.visible){
 			if(userList){
 				for( let i = 0; i<userList.length; i++){
 					if(userList[i].boardID == this.tileData){
 						drawPerson(ctx,this.x,this.y,90,90, userList[i].color);
+						if (i==myUserlistIndex) {selected=this}
 					}
 				}
 			}
@@ -928,11 +929,11 @@ function draw(){
 	
 	//selected outline
 	
-	if(Moose != undefined){
+	if(selected != undefined){
 		//debugger;
-		Moose.draw(ctx)
+		//Moose.draw(ctx)
 
-		//selected.drawOutline('#0000ff');
+		selected.drawOutline('#444444');
 	}
 	
 	//button

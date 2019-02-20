@@ -29,8 +29,8 @@ var spectators = [];
 
 var currentTurn = 0;
 
-var boardRows = 11;
-var boardColumns = 11;
+var boardRows = 9;
+var boardColumns = 9;
 var boardState = [];
 
 //var tiles = [];
@@ -61,9 +61,13 @@ var notReadyTitleColor = "#ff0000";
 var spectatorColor = "#444444";
 var notYourTurnColor = "#ffffff";
 var yourTurnColor = "#0000ff";
+var colorlist=[
+"#000000","#00ff00","#00ffff","#ff00ff",
+"#ff0000","#0000ff","#ffff00","#ffffff"
+]
 
 
-var nextUserID=-1
+var nextUserID=0
 
 console.log("Server Started!");
 
@@ -76,7 +80,7 @@ function defaultUserData(){
 		statusColor: notReadyColor,
 		ready: false,
 		skippedTurn: false,
-		ID:nextUserID++
+		ID:(nextUserID++)%colorlist.length
 	}
 }
 
@@ -253,7 +257,7 @@ function gameStart() {
 	spectators = [];
 	allClients.forEach(function(client){ 
 		if(client.userData.ready){
-			client.userData.statusColor = notYourTurnColor;
+			client.userData.statusColor = colorlist[client.userData.ID];
 			client.userData.cards = [];
 			client.userData.score = 0;
 			//client.userData.skippedTurn = false;
@@ -279,7 +283,7 @@ function gameStart() {
 	
 
 
-	updateTurnColor();
+	//updateTurnColor();
 	//wait for turn plays
 }
 
@@ -454,6 +458,7 @@ function gameEnd() {
         client.userData.statusColor = notReadyColor;
     });
     gameStatus = gameMode.LOBBY;
+    nextUserID=0
     updateUsers();
 }
 

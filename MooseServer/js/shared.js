@@ -1,4 +1,4 @@
-var numberOfTilesForHand = 8;
+var numberOfTilesForHand = 4;
 
 var blankTile = {owner: "board", number: -1, id: -1};
 function newBlankTile(){
