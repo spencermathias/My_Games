@@ -79,7 +79,7 @@ function defaultUserData(){
 		score: 0,
 		statusColor: notReadyColor,
 		ready: false,
-		skippedTurn: false,
+		playedCard: false,
 		ID:(nextUserID++)%colorlist.length
 	}
 }
@@ -191,6 +191,10 @@ io.sockets.on("connection", function(socket) {
 	
 	socket.on("recieveTile", function(tile){
 		if (gameStatus === gameMode.PLAYTILE){
+			if (!playedCard){
+					playedCard=true
+					
+				}
 			//check if already recieved
 				//if not, 
 					//set as picked, 

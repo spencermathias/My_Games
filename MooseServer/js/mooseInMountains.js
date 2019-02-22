@@ -89,6 +89,7 @@ var tilePadding = 5;
 var allTiles = [];
 var serverTiles = [];
 var selected = undefined;
+var highlightME = undefined;
 var scoreIsValid = false;	
 
 var canvas = document.getElementById("gameBoard");
@@ -147,6 +148,7 @@ class Button {
 	}
 	
 	click(){
+		//TODO: show the posible move locations
 		console.log("This button has not been overloaded yet!");
 	}
 } 
@@ -910,7 +912,7 @@ function draw(){
 	
 	//board
 	if(boardState.length > 0){
-		board.draw(ctx);
+		//board.draw(ctx);
 	}
 	
 	//player tiles
@@ -929,11 +931,11 @@ function draw(){
 	
 	//selected outline
 	
-	if(selected != undefined){
+	if(highlightME != undefined){
 		//debugger;
 		//Moose.draw(ctx)
 
-		selected.drawOutline('#444444');
+		highlightME.drawOutline('#888888');
 	}
 	
 	//button
