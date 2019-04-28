@@ -1,4 +1,5 @@
 var numberOfTilesForHand = 4;
+var movemax=2
 
 var blankTile = {owner: "board", number: -1, id: -1};
 function newBlankTile(){
@@ -388,12 +389,76 @@ function boardIsCorrectSize(submittedBoardState, boardState){
 	return correctSize;
 }
 
+function addcord(a,b,neg=1){let c={}
+	let a1=[],b1=[]
+	if(a==0){a1.x=0;a1.y=0}else{a1=a}
+	if(b==0){b1.x=0;b1.y=0}else{b1=b}
+	c.x=a1.x+neg*b1.x
+	c.y=a1.y+neg*b1.y
+	return c
+}
+
+function validMove(movement,boardState,playerID){
+	//could give half integers and loose the piece
+	let movelen=Math.abs(movement.x)+Math.abs(movement.y)
+	if(movelen>0 && movelen<=movemax){
+		for(let i=0; i<boardState.length; i++){
+			let x=boardState[i].findIndex(ID => ID === playerID)
+			if(x!=-1){
+				let newLocation = addcord({x:x,y:i},movement)
+				newLocation.x%=boardState.length
+				newLocation.y%=boardState.length
+				boardState[i][x]=-1
+				boardState[newLocation.y][newLocation.x]=playerID
+				break
+			}
+		}
+	}
+	return boardState
+}
+function parsePath(path){
+	let dmax={
+	dy:0,
+	dx:0,
+	miny:0,
+	maxy:0,
+	minx:0,
+	maxx:0}
+	
+	for(let i = 0; i<path.length; i++){
+		let c = path[i];
+		switch(c){
+			case 'U':
+				dmax.dy -= 1;
+				dmax.miny = Math.min(dmax.miny,dmax.dy);
+			break;
+			case 'R':
+				dmax.dx += 1; 
+				dmax.maxx = Math.max(dmax.maxx,dmax.dx);
+			break;
+			case 'D':
+				dmax.dy += 1; 
+				dmax.maxy = Math.max(dmax.maxy,dmax.dy);
+			break;
+			case 'L':
+				dmax.dx -= 1; 
+				dmax.minx = Math.min(dmax.minx,dmax.dx);
+			break;
+		}
+	}
+
+	return(dmax)
+}
+
+//validMove: function(movement,boardState,playerID){return validTilesToPlay(playerTiles, submittedBoardState, currentBoardState, numberOfTilesForHand, allTiles)}
 try {
 	module.exports = {
 		numberOfTilesForHand: numberOfTilesForHand,
 		blankTile: blankTile,
 		Deck:Deck,
-		validTilesToPlay: function(playerTiles, submittedBoardState, currentBoardState, numberOfTilesForHand, allTiles){return validTilesToPlay(playerTiles, submittedBoardState, currentBoardState, numberOfTilesForHand, allTiles)}
+		validMove: function(movement,boardState,playerID){return validMove(movement,boardState,playerID)},
+		addcord: function(a,b,neg){return addcord(a,b,neg)},
+		parsePath: function(path){return parsePath(path)}
 	}
 } catch (err){
 	console.log("you must be client side!");

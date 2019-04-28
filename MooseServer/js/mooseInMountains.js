@@ -215,34 +215,7 @@ function arrowdraw(ctx,x,y,width,height,path){
 		return;
 	} 
 	//parse path (directions)
-	var dy = 0;
-	var dx = 0;
-	var miny = 0
-	var maxy = 0
-	var minx = 0
-	var maxx = 0
-	
-	for(var i = 0; i<path.length; i++){
-		var c = path[i];
-		switch(c){
-			case 'U':
-				dy -= 1;
-				miny = Math.min(miny,dy);
-			break;
-			case 'R':
-				dx += 1; 
-				maxx = Math.max(maxx,dx);
-			break;
-			case 'D':
-				dy += 1; 
-				maxy = Math.max(maxy,dy);
-			break;
-			case 'L':
-				dx -= 1; 
-				minx = Math.min(minx,dx);
-			break;
-		}
-	}
+	dmax=parsePath(path)
 	
 	
 	var oneArrowWidth = width*0.4
@@ -251,13 +224,13 @@ function arrowdraw(ctx,x,y,width,height,path){
 	var totArrowHeight = 1
 	var totArrowWidtht = 1
 	
-	if ((maxx-minx)!=0){
-		totArrowWidtht = Math.min((maxx-minx)*oneArrowWidth,width*0.9)
-		oneArrowWidth = (totArrowWidtht-dotRadius)/(maxx-minx)
+	if ((dmax.maxx-dmax.minx)!=0){
+		totArrowWidtht = Math.min((dmax.maxx-dmax.minx)*oneArrowWidth,width*0.9)
+		oneArrowWidth = (totArrowWidtht-dotRadius)/(dmax.maxx-dmax.minx)
 	}
-	if ((maxy-miny)!=0){
-		totArrowHeight = Math.min((maxy-miny)*oneArrowHeight,height*0.9)
-		oneArrowHeight = totArrowHeight/(maxy-miny)
+	if ((dmax.maxy-dmax.miny)!=0){
+		totArrowHeight = Math.min((dmax.maxy-dmax.miny)*oneArrowHeight,height*0.9)
+		oneArrowHeight = totArrowHeight/(dmax.maxy-dmax.miny)
 	}
 	
 	//draw
@@ -269,8 +242,8 @@ function arrowdraw(ctx,x,y,width,height,path){
 	ctx.strokeStyle = lineColor;
 	ctx.lineWidth = dotRadius;
 	
-	var curX = x-totArrowWidtht/2-minx*oneArrowWidth
-	var curY = y-totArrowHeight/2-miny*oneArrowHeight
+	var curX = x-totArrowWidtht/2-dmax.minx*oneArrowWidth
+	var curY = y-totArrowHeight/2-dmax.miny*oneArrowHeight
 	//Lines
 	ctx.beginPath();
 	ctx.moveTo(curX,curY)
@@ -334,14 +307,7 @@ function arrowdraw(ctx,x,y,width,height,path){
 	ctx.restore();
 }
 
-function addcord(a,b,neg=1){let c=[]
-	let a1=[],b1=[]
-	if(a==0){a1.x=0;a1.y=0}else{a1=a}
-	if(b==0){b1.x=0;b1.y=0}else{b1=b}
-	c.x=a1.x+neg*b1.x
-	c.y=a1.y+neg*b1.y
-	return c
-}
+
 function cord2dpath(cord){
 	let path=''
 	for(i=0;i<Math.abs(cord.x);i++){
@@ -447,8 +413,15 @@ class doubleButton{
 	drawOutline(color){ //TODO: move to sub buttons
 		this.highlightColor = color;
 	}
-	click(){
-		console.log("This button has not been overloaded yet!");
+	click(direction){
+		//console.log("This button has not been overloaded yet!");
+		let tile={ID:-1,path:''}
+		tile.ID=this.tileData
+		if(direction=='L'){
+			tile.path=this.arrowb
+		}else{tile.path=this.arrowg}
+		console.log(tile)
+		socket.emit("recieveTile",tile)
 		// send cardID to the server and option chosen
 	}
 }
@@ -464,6 +437,7 @@ class ButtonHalf{
 		this.shape = shape;
 		this.direction = direction;
 		this.visible = true;
+		this.parent=parent
 	}
 	
 	updateSize(x,y,width,height,direction){
@@ -510,9 +484,9 @@ class ButtonHalf{
 	}
 	
 	click(){
-		console.log("This button half has not been overloaded yet!");
-	}
-	
+		console.log("This button half");
+		this.parent.click(this.direction)
+		}	
 }
 
 
@@ -912,7 +886,7 @@ function draw(){
 	
 	//board
 	if(boardState.length > 0){
-		//board.draw(ctx);
+		board.draw(ctx);
 	}
 	
 	//player tiles
