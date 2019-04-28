@@ -68,7 +68,7 @@ function solveStr(eq) {
                 eq = eq.substr(0, last + 1) + "&" + eq.substr((last+1)+1);
             }
         }
-        if(eq.substr(first-8,first)=='distance'){
+        if(eq.substr(first-8,8)=='distance'){
 
             var solvedStr = solveStr(nested);
             solvedStr=distance(solvedStr)
