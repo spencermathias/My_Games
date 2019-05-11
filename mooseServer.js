@@ -250,13 +250,14 @@ io.sockets.on("connection", function(socket) {
 		moosecord.y=moosecord.dy
 		moosecord.x=moosecord.dx
 		moosecord=shared.addcord(moosecord,{x:4,y:4})
-		message(socket,moosecord.y, gameErrorColor)
+		//message(socket,moosecord.y, gameErrorColor)
 		console.log('here')
 		for(let i=0; i<boardState.length; i++){
 			let x=boardState[i].findIndex(ID => ID === socket.userData.ID)
 			if(x!=-1){
 				let newLocation = shared.addcord({x:x,y:i},moosecord,-1)
 				if(newLocation.x===0 && newLocation.y===0){
+					message(socket,'you win', gameColor)
 					gameEnd()
 				}
 			}
