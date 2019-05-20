@@ -450,6 +450,8 @@ function parsePath(path){
 	return(dmax)
 }
 
+
+
 //validMove: function(movement,boardState,playerID){return validTilesToPlay(playerTiles, submittedBoardState, currentBoardState, numberOfTilesForHand, allTiles)}
 try {
 	module.exports = {

@@ -91,6 +91,9 @@ var serverTiles = [];
 var selected = undefined;
 var highlightME = undefined;
 var scoreIsValid = false;	
+var newbox = undefined;
+var newbox1 = undefined;
+var newbox2 = undefined;
 
 var canvas = document.getElementById("gameBoard");
 var ctx = canvas.getContext("2d");
@@ -605,7 +608,7 @@ class Board {
 			
 			//border
 			ctx.fillStyle = this.borderColor;
-			var border = Math.min(.01*bw, .01*bh);
+			var border = Math.min(this.rowThickness, this.columnThickness);
 			ctx.fillRect(xMin - border, yMin - border, bw + 2*border, bh + 2*border);
 			//background
 			ctx.fillStyle = this.backgroundColor;
@@ -904,12 +907,15 @@ function draw(){
 	}
 	
 	//selected outline
-	
-	if(highlightME != undefined){
-		//debugger;
-		//Moose.draw(ctx)
-
-		highlightME.drawOutline('#888888');
+	//place questions on board 
+	if(newbox1!=undefined){
+		newbox1.draw(ctx)
+	}
+	if(newbox != undefined){
+		newbox.draw(ctx);
+	}
+	if(newbox2!=undefined){
+		newbox2.draw(ctx)
 	}
 	
 	//button
