@@ -5,7 +5,7 @@
 //events
 
 //network definitions
-const localAddress = '192.168.1.124'
+const localAddress = 'localhost'//'192.168.1.124'
 const localPort = '8080'
 const publicAddress = '184.167.236.159'
 
