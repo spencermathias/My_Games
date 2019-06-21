@@ -20,7 +20,7 @@ var server = http.createServer(app).listen(socket,"0.0.0.0",511,function(){conso
 io = io.listen(server);
 /*initializing the websockets communication , server instance has to be sent as the argument */
 
-var minPlayers = 2;
+var minPlayers = 1;
 var maxPlayers = 20;
 
 var allClients = [];

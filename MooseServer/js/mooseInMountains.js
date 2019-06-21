@@ -7,7 +7,7 @@
 //network definitions
 const localAddress = 'localhost'//'192.168.1.124'
 const localPort = '8080'
-const publicAddress = '184.167.236.159'
+const publicAddress = 'localhost:8080'//184.167.236.159'
 
 
 window.addEventListener('load', function() {
@@ -94,6 +94,7 @@ var scoreIsValid = false;
 var newbox = undefined;
 var newbox1 = undefined;
 var newbox2 = undefined;
+var drawState = 2;
 
 var canvas = document.getElementById("gameBoard");
 var ctx = canvas.getContext("2d");
@@ -522,14 +523,28 @@ class MoveTile extends Tile	{
 }
 */
 class SubmitButton extends Button{
-	constructor(){
-		super(canvas.width/2, 60, tileWidth*4, tileHeight,"SUBMIT",'#0000ff',undefined,'#ffffff',undefined,tileFontSize,false)
+	constructor(y,width,text,type){
+		super(canvas.width/2, 60, width , tileHeight,text = "button",'#0000ff',undefined,'#ffffff',undefined,tileFontSize,false)
 	}
 	click(){
 		if(this.visible){
 			var sendState = getTileData(newState);	
 			console.log("sending to server"); 
-			socket.emit("newBoardState", sendState);				
+			switch(type){
+				case 'dist':
+					if (selected.value!=-1){
+						socket.emit('recieveDistanceQuestion',selected.value)
+					}
+				break;
+				case 'yesNo':
+					if (selected.string!=undefined){
+						socket.emit('recieveYesNoQuestion',selected.string)
+					}
+				break;
+				case 'move':
+					socket.emit('recieveMove',{x:1,y:1})
+				break
+			}
 		}
 	}
 }
@@ -605,11 +620,21 @@ class Board {
 			var xMax = this.x + bw/2;
 			var yMin = this.y - bh/2;
 			var yMax = this.y + bh/2;
+
 			
 			//border
 			ctx.fillStyle = this.borderColor;
 			var border = Math.min(this.rowThickness, this.columnThickness);
 			ctx.fillRect(xMin - border, yMin - border, bw + 2*border, bh + 2*border);
+			
+			ctx.font = '' + this.rowThickness*0.9 +"px Comic Sans MS";
+			ctx.fillStyle = this.backgroundColor;
+			ctx.textAlign = "center";
+			ctx.fillText('N',this.x,this.y-bw/2-(this.rowThickness)/2*.8)
+			ctx.fillText('S',this.x,this.y+bw/2+(this.rowThickness)/2)
+			ctx.fillText('W',this.x-bh/2-this.columnThickness/2,this.y)
+			ctx.fillText('E',this.x+bh/2+this.columnThickness/2,this.y)
+			
 			//background
 			ctx.fillStyle = this.backgroundColor;
 			ctx.fillRect(xMin,yMin,bw, bh);
@@ -729,6 +754,9 @@ var myTurn = false;
 var myUserlistIndex = 0;
 var myUserlistString = "";
 var Moose=undefined
+
+
+
 Moose=new paun('../images/moose-clipart-Moose-Silhouette.svg',435,398,90,90,{x:5,y:5})
 
 socket.on("message",function(message){  
@@ -875,63 +903,93 @@ function checkClick(event){
 		selected = undefined;
 	}
 }
+var yesNoAsk=new Button(300,canvas.height*3/4,300,100,"yes or No?","#ffff00","#000000","#00ff00")
+var distance2moose=new Button(300,canvas.height/2,300,100,"Distance?","#ffff00","#000000","#00ff00")
+var movePiece=new Button(300,canvas.height/4,300,100,"move","#ffff00","#000000","#00ff00")
 
 //drawing stuff
 
 function draw(){
-	shapes = [[],[],[]]; //first object is top layer, second is middle, last is bottom layer
+	//shapes = [[],[],[]]; //first object is top layer, second is middle, last is bottom layer
 	ctx.textAlign="center";
 	ctx.textBaseline = "middle";
 	//console.log('draw: ', shapes );
 	ctx.clearRect(0,0,canvas.width, canvas.height);
 	
 	//var radius = (Math.min(canvas.width, canvas.height-140)/2)-50;
-	
-	//board
-	if(boardState.length > 0){
-		board.draw(ctx);
-	}
-	
-	//player tiles
-	for(var i = 0; i < myTiles.length; i++){
-		//if(myTurn){
-		/*if(scoreIsValid){
-			myTiles[i].drawOutline(validPlayColor);
-		} else {
-			myTiles[i].drawOutline(invalidPlayColor);
-		}*/		//} else {
-		//	myTiles[i].drawOutline('#444444'); //placeholder outline
-		//}
-		
-		shapes[0] = shapes[0].concat( myTiles[i].subButtons );//1st layer
-	}
-	
-	//selected outline
-	//place questions on board 
-	if(newbox1!=undefined){
-		newbox1.draw(ctx)
-	}
-	if(newbox != undefined){
-		newbox.draw(ctx);
-	}
-	if(newbox2!=undefined){
-		newbox2.draw(ctx)
-	}
-	
-	//button
-	if(myTurn){
-		submitButton.visible = true;
-		shapes[0].push(submitButton);
-	} else {
-		submitButton.visible = false;
-	}
-	
-	//draw cards
-	for( var i = shapes.length-1; i >= 0; i -= 1){
-		//if(i==0 && shapes[0].length > 0){debugger;}
-		for(var j = 0; j < shapes[i].length; j++){
-			shapes[i][j].draw(ctx);
-		}
+	switch(drawState){
+		case 1:
+			if(boardState.length > 0){
+				board.x=canvas.width-(board.columns+3)*board.columnThickness/2
+				board.draw(ctx);
+				for(var i = 0; i < myTiles.length; i++){
+					shapes[0] = shapes[0].concat( myTiles[i].subButtons );//1st layer
+				}
+
+			}
+			for( var i = shapes.length-1; i >= 0; i -= 1){
+				//if(i==0 && shapes[0].length > 0){debugger;}
+				for(var j = 0; j < shapes[i].length; j++){
+					shapes[i][j].draw(ctx);
+				}
+			}
+			if(movePiece!=undefined){
+				movePiece.draw(ctx)
+			}
+			if(distance2moose != undefined){
+				distance2moose.draw(ctx);
+			}
+			if(yesNoAsk!=undefined){
+				yesNoAsk.draw(ctx)
+			}
+			//canvas.width-board.columnThickness
+		break;
+		case 2:
+			//board
+			if(boardState.length > 0){
+				board.x=canvas.width/2
+				board.draw(ctx);
+			}
+			
+			//player tiles
+			for(var i = 0; i < myTiles.length; i++){
+				//if(myTurn){
+				/*if(scoreIsValid){
+					myTiles[i].drawOutline(validPlayColor);
+				} else {
+					myTiles[i].drawOutline(invalidPlayColor);
+				}*/		//} else {
+				//	myTiles[i].drawOutline('#444444'); //placeholder outline
+				//}
+				
+				shapes[0] = shapes[0].concat( myTiles[i].subButtons );//1st layer
+			}
+			
+			//selected outline
+			//place questions on board 
+
+			
+			//button
+			/*
+			if(myTurn){
+				submitButton.visible = true;
+				shapes[0].push(submitButton);
+			} else {
+				submitButton.visible = false;
+			}
+			*/
+			//draw cards
+			for( var i = shapes.length-1; i >= 0; i -= 1){
+				//if(i==0 && shapes[0].length > 0){debugger;}
+				for(var j = 0; j < shapes[i].length; j++){
+					shapes[i][j].draw(ctx);
+				}
+			}
+
+
+
+
+
 	}
 	setTimeout(draw, 100); //repeat
 }
@@ -953,6 +1011,10 @@ function resizeDrawings(){
 	board.y = canvas.height/2;
 	board.rowThickness = tileHeight + 2*tilePadding;
 	board.columnThickness = tileWidth + 2*tilePadding;
+	movePiece.updateSize(movePiece.x,board.y/2,movePiece.width,movePiece.height)
+	distance2moose.updateSize(distance2moose.x,board.y,distance2moose.width,distance2moose.height)
+	yesNoAsk.updateSize(yesNoAsk.x,board.y*3/2,yesNoAsk.width,yesNoAsk.height)
+
 	
 	for(var i = 0; i < myTiles.length; i++){
 		myTiles[i].updateSize((canvas.width/2) + (tileWidth + 20) * (i-2) , canvas.height - (tileHeight + 20), tileHeight, tileWidth);
