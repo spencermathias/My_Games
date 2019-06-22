@@ -398,24 +398,27 @@ function addcord(a,b,neg=1){let c={}
 	return c
 }
 
-function validMove(movement,boardState,playerID){
+function validMove(movement){
 	//could give half integers and loose the piece
-	let movelen=Math.abs(movement.x)+Math.abs(movement.y)
-	if(movelen>0 && movelen<=movemax){
-		for(let i=0; i<boardState.length; i++){
-			let x=boardState[i].findIndex(ID => ID === playerID)
-			if(x!=-1){
-				let newLocation = addcord({x:x,y:i},movement)
-				newLocation.x%=boardState.length
-				newLocation.y%=boardState.length
-				boardState[i][x]=-1
-				boardState[newLocation.y][newLocation.x]=playerID
-				break
-			}
+	let movelen=Math.abs(Math.floor(movement.x))+Math.abs(Math.floor(movement.y))
+	let valid=false
+	if(movelen>0 && movelen<=movemax){valid=true} else {valid=false}
+
+	return valid
+}
+function getcord(boardState,playerID){
+	let cord={}
+	for(let i=0; i<boardState.length; i++){
+		let x=boardState[i].findIndex(ID => ID === playerID)
+		if(x!=-1){
+			cord={x:x,y:i}
+			break
 		}
 	}
-	return boardState
+	return cord
 }
+
+
 function parsePath(path){
 	let dmax={
 	dy:0,
@@ -458,7 +461,7 @@ try {
 		numberOfTilesForHand: numberOfTilesForHand,
 		blankTile: blankTile,
 		Deck:Deck,
-		validMove: function(movement,boardState,playerID){return validMove(movement,boardState,playerID)},
+		validMove: function(movement){return validMove(movement)},
 		addcord: function(a,b,neg){return addcord(a,b,neg)},
 		parsePath: function(path){return parsePath(path)}
 	}

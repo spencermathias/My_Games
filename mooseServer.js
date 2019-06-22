@@ -68,7 +68,7 @@ var colorlist=[
 var playedcards=[]
 var allPlayedcards = []
 var moose=''
-var cards = new shared.Deck({mean:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0},0,0],dif:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0}]})
+var cards = undefined
 
 
 console.log("Server Started!");
@@ -212,6 +212,19 @@ io.sockets.on("connection", function(socket) {
 			console.log("currentTurn "+currentTurn)
 			if(socket.userData.ID==currentTurn){
 				console.log("recieved move")
+				if(shared.validMove(movement)){
+					for(let i=0; i<boardState.length; i++){
+						let x=boardState[i].findIndex(ID => ID === playerID)
+						if(x!=-1){
+							let newLocation = addcord({x:x,y:i},movement)
+							newLocation.x%=boardState.length
+							newLocation.y%=boardState.length
+							boardState[i][x]=-1
+							boardState[newLocation.y][newLocation.x]=playerID
+							break
+						}
+					}
+				}
 				boardState=shared.validMove(movement,boardState,currentTurn)
 				currentTurn++
 				currentTurn%=players.length
@@ -279,14 +292,14 @@ io.sockets.on("connection", function(socket) {
 					if (tileID>=0) {
 						console.log(tileID)
 						for(let i=0; i<boardState.length; i++){
-							let y=boardState[i].findIndex(function(ID){return (ID == tileID)})
+							let x=boardState[i].findIndex(function(ID){return (ID == tileID)})
 							console.log(i)
-							if(y!=-1){
-								mooseDistance=shared.addcord({x:i,y:y},moosecord,-1)
+							if(x!=-1){
+								mooseDistance=shared.addcord({x:x,y:i},moosecord,-1)
 								currentTurn++
 								currentTurn%=players.length
 								name=players[tileID].userData.userName
-								console.log(players[tileID].userData.userName,i,y)
+								console.log(players[tileID].userData.userName,x,i)
 								console.log('moosecord',moosecord.x,moosecord.y)
 								break
 							}
@@ -380,6 +393,7 @@ function gameStart() {
 	//reset players
 	players = [];
 	spectators = [];
+	cards=new shared.Deck({mean:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0},0,0],dif:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0}]})
 	moose=''
 	let playerCount=0
 	allClients.forEach(function(client){ 

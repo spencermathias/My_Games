@@ -107,7 +107,6 @@ var cards = new Deck({mean:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0},0,0],dif:[
 class Button {
 	constructor(x, y, width, height, text = "button", fillColor, outlineColor, textColor, textOutlineColor, fontSize = 50, textSlant = false){
 		this.updateSize(x,y,width,height);
-
 		this.fillColor = fillColor;
 		this.outlineColor = outlineColor;
 		this.textColor = textColor;
@@ -153,12 +152,17 @@ class Button {
 	
 	click(){
 		//TODO: show the posible move locations
-		console.log("This button has not been overloaded yet!");
+		if(validMove(addcord(getcord(reBoardState,myUserlistIndex),this.cord,-1))){
+			selected=this
+			selected.visible=true
+		}else{
+			console.log("This button has not been overloaded yet!");
+		}
 	}
 } 
 
 class Tile extends Button{
-	constructor(tileData, x,y,width,height,fontSize){
+	constructor(tileData, x,y,width,height,fontSize,cord){
 		var text = -1;
 		if(tileData != undefined){
 			text = tileData.number
@@ -167,6 +171,7 @@ class Tile extends Button{
 		this.tileData = tileData;
 		this.visible = (text >= 0);
 		this.highlightColor = "";
+		this.cord=cord
 	}
 	
 	drawOutline(color){
@@ -196,7 +201,7 @@ class Tile extends Button{
 				for( let i = 0; i<userList.length; i++){
 					if(userList[i].boardID == this.tileData){
 						drawPerson(ctx,this.x,this.y,90,90, userList[i].color);
-						if (i==myUserlistIndex) {selected=this}
+						//if (i==myUserlistIndex) {selected=this}
 					}
 				}
 			}
@@ -517,20 +522,21 @@ class MoveTile extends Tile	{
 			selected = this;
 		}
 		
-		updatePlayValidity();
+		//updatePlayValidity();
 		//console.log("I am tile of number: " + this.tileData.number + " and Id: " + this.tileData.id, this);
 	}
 }
 */
 class SubmitButton extends Button{
 	constructor(y,width,text,type){
-		super(canvas.width/2, 60, width , tileHeight,text = "button",'#0000ff',undefined,'#ffffff',undefined,tileFontSize,false)
+		super(300,y,width,100,text,"#ffff00","#000000","#00ff00")
+		this.type=type
 	}
 	click(){
 		if(this.visible){
 			var sendState = getTileData(newState);	
 			console.log("sending to server"); 
-			switch(type){
+			switch(this.type){
 				case 'dist':
 					if (selected.value!=-1){
 						socket.emit('recieveDistanceQuestion',selected.value)
@@ -577,6 +583,7 @@ class Board {
 	}
 	
 	updateFromServer(recievedBoardState){
+		reBoardState=recievedBoardState
 		this.rows = recievedBoardState.length;
 		if(recievedBoardState.length > 0){
 			this.columns = recievedBoardState[0].length;
@@ -588,7 +595,7 @@ class Board {
 				for(var row = 0; row < recievedBoardState.length; row++){
 					var line = [];
 					for(var col = 0; col < recievedBoardState[0].length; col++){
-						line.push(new Tile(newBlankTile(), 0, 0, tileHeight, tileWidth, tileFontSize));
+						line.push(new Tile(newBlankTile(), 0, 0, tileHeight, tileWidth, tileFontSize,{x:col,y:row}));
 					}
 					boardState.push(line);
 				}
@@ -737,9 +744,10 @@ function changeName(userId){
 /*Initializing the connection with the server via websockets */
 var myTiles = [];
 var boardState = [[]];
+var reBoardState=[[]];
 var newState = [[]];
 var board = new Board(canvas.width/2, canvas.height/2, boardState.length, boardState[0].length, tileHeight+2*tilePadding, tileWidth+2*tilePadding);
-var submitButton = new SubmitButton();
+//var submitButton = new SubmitButton();
 var shapes = [[],[],[]];
 var userList = [];
 var spectatorColor = "#444444";
@@ -903,14 +911,16 @@ function checkClick(event){
 		selected = undefined;
 	}
 }
-var yesNoAsk=new Button(300,canvas.height*3/4,300,100,"yes or No?","#ffff00","#000000","#00ff00")
-var distance2moose=new Button(300,canvas.height/2,300,100,"Distance?","#ffff00","#000000","#00ff00")
-var movePiece=new Button(300,canvas.height/4,300,100,"move","#ffff00","#000000","#00ff00")
+
+
+var yesNoAsk=new SubmitButton(canvas.height*3/4,300,"yes or No?",'yesNo')
+var distance2moose=new SubmitButton(canvas.height/2,300,"Distance?",'dist')
+var movePiece=new SubmitButton(canvas.height/4,300,"move","move")
 
 //drawing stuff
 
 function draw(){
-	//shapes = [[],[],[]]; //first object is top layer, second is middle, last is bottom layer
+	shapes = [[],[],[]]; //first object is top layer, second is middle, last is bottom layer
 	ctx.textAlign="center";
 	ctx.textBaseline = "middle";
 	//console.log('draw: ', shapes );
@@ -925,7 +935,15 @@ function draw(){
 				for(var i = 0; i < myTiles.length; i++){
 					shapes[0] = shapes[0].concat( myTiles[i].subButtons );//1st layer
 				}
-
+				if(movePiece!=undefined){
+					shapes[0] = shapes[0].concat(movePiece)
+				}
+				if(distance2moose != undefined){
+					shapes[0] = shapes[0].concat(distance2moose)
+				}
+				if(yesNoAsk!=undefined){
+					shapes[0] = shapes[0].concat(yesNoAsk)
+				}
 			}
 			for( var i = shapes.length-1; i >= 0; i -= 1){
 				//if(i==0 && shapes[0].length > 0){debugger;}
@@ -933,14 +951,11 @@ function draw(){
 					shapes[i][j].draw(ctx);
 				}
 			}
-			if(movePiece!=undefined){
-				movePiece.draw(ctx)
-			}
-			if(distance2moose != undefined){
-				distance2moose.draw(ctx);
-			}
-			if(yesNoAsk!=undefined){
-				yesNoAsk.draw(ctx)
+			if(selected!=undefined){
+				if (selected.visible==true){
+					selected.drawOutline('#005500')
+				}
+
 			}
 			//canvas.width-board.columnThickness
 		break;
@@ -966,6 +981,12 @@ function draw(){
 			}
 			
 			//selected outline
+			if(selected!=undefined){
+				if (selected.visible==true){
+					selected.drawOutline('#005500')
+				}
+
+			}
 			//place questions on board 
 
 			
@@ -1019,7 +1040,7 @@ function resizeDrawings(){
 	for(var i = 0; i < myTiles.length; i++){
 		myTiles[i].updateSize((canvas.width/2) + (tileWidth + 20) * (i-2) , canvas.height - (tileHeight + 20), tileHeight, tileWidth);
 	}
-	submitButton.updateSize(canvas.width/2, 60, tileWidth*4, tileHeight);
+	//submitButton.updateSize(canvas.width/2, 60, tileWidth*4, tileHeight);
 }
 
 /*
