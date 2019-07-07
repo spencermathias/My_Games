@@ -127,7 +127,7 @@ io.sockets.on("connection", function(socket) {
 				socket.userData = players[i].userData;
 				players[i] = socket;
 				socket.emit('tiles', socket.userData.tiles);
-				updateTurnColor();
+				//updateTurnColor();
 			} else {
 				console.log(__line, "new player");
 			}
@@ -193,16 +193,20 @@ io.sockets.on("connection", function(socket) {
 	socket.on("recieveTile", function(tile){
 		if (gameStatus === gameMode.PLAYTILE){
 			if (!socket.userData.playedCard){
-					socket.userData.playedCard=true
-					if(currentTurn==-1){currentTurn=socket.userData.ID}
-					playedcards[socket.userData.ID]=tile.ID
-					moose+=tile.path
-					let theTiles=socket.userData.tiles
-					theTiles.splice(theTiles.findIndex(ID => ID === tile.ID),1)
-					socket.userData.tiles=theTiles.concat(cards.deal())
-					socket.emit("tiles", socket.userData.tiles)
-					checkmoose()
-				}
+				socket.userData.playedCard=true
+				if(currentTurn==-1){currentTurn=(socket.userData.ID+players.length-1)%players.length}
+				allPlayedcards[socket.userData.ID]=tile.ID
+				playedcards.push(tile.ID)
+				console.log(tile.ID)
+				moose+=tile.path
+				let theTiles=socket.userData.tiles
+				theTiles.splice(theTiles.findIndex(ID => ID === tile.ID),1)
+				socket.userData.tiles=theTiles.concat(cards.deal())
+				socket.emit("tiles", socket.userData.tiles)
+				console.log(playedcards)
+				io.sockets.emit('playedTiles',allPlayedcards)
+				checkmoose()
+			}
 		}
 	});
 	
@@ -213,27 +217,24 @@ io.sockets.on("connection", function(socket) {
 			if(socket.userData.ID==currentTurn){
 				console.log("recieved move")
 				if(shared.validMove(movement)){
+					console.log('validMove')
 					for(let i=0; i<boardState.length; i++){
-						let x=boardState[i].findIndex(ID => ID === playerID)
+						console.log(i)
+						let x=boardState[i].findIndex(ID => ID === currentTurn)
 						if(x!=-1){
-							let newLocation = addcord({x:x,y:i},movement)
+							let newLocation = shared.addcord({x:x,y:i},movement)
 							newLocation.x%=boardState.length
 							newLocation.y%=boardState.length
+							console.log(newLocation.x)
 							boardState[i][x]=-1
-							boardState[newLocation.y][newLocation.x]=playerID
+							boardState[newLocation.y][newLocation.x]=currentTurn
 							break
 						}
 					}
 				}
-				boardState=shared.validMove(movement,boardState,currentTurn)
-				currentTurn++
-				currentTurn%=players.length
-				sendBoardState()
-				if(!socket.userData.playedCard){
-					gameStatus=gameMode.PLAYTILE
-					message( io.sockets, 'time to move moose' , gameColor)
-				}
-				socket.userData.playedCard=false
+				//boardState=shared.validMove(movement,boardState,currentTurn)
+				nextTurn()
+				
 			}else{
 				console.log(__line,'outofTurn');
 				message( socket, 'It is not your turn!', gameErrorColor);
@@ -271,6 +272,9 @@ io.sockets.on("connection", function(socket) {
 				let newLocation = shared.addcord({x:x,y:i},moosecord,-1)
 				if(newLocation.x===0 && newLocation.y===0){
 					message(socket,'you win', gameColor)
+					gameEnd()
+				}else{
+					message(socket,'you lose', gameColor)
 					gameEnd()
 				}
 			}
@@ -335,10 +339,7 @@ io.sockets.on("connection", function(socket) {
 					moosecall='The moose is '+mooseDist+" away from "+name 
 					let mooselen=Math.abs(mooseDistance.x)+Math.abs(mooseDistance.y)
 					message( io.sockets, moosecall , gameColor);
-					if(!socket.userData.playedCard){
-						gameStatus=gameMode.PLAYTILE
-						message( io.sockets, 'time to move moose' , gameColor)
-					}
+					nextTurn()
 				}
 			}else{
 				console.log(__line,'outofTurn');
@@ -382,7 +383,9 @@ function checkmoose() {
             	})
 
             firstPlayed=-1
+            allPlayedcards=Array(players.length).fill(-1)
             moveORquestion();
+            nextTurn()
         }
     }
 }
@@ -395,6 +398,7 @@ function gameStart() {
 	spectators = [];
 	cards=new shared.Deck({mean:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0},0,0],dif:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0}]})
 	moose=''
+	playedcards=[]
 	let playerCount=0
 	allClients.forEach(function(client){ 
 		if(client.userData.ready){
@@ -411,11 +415,11 @@ function gameStart() {
 	
 	setUpBoard();
 	updateBoard(io.sockets, readyTitleColor, true); //changes screen from lobby to board
-	currentTurn = -1//Math.floor(Math.random()*players.length); random starting person
-
+	currentTurn = -2//Math.floor(Math.random()*players.length); random starting person
+	nextTurn()
 	//make deck to play with
 	
-    playedcards = Array(players.length).fill(0)
+    allPlayedcards = Array(players.length).fill(-1)
 
 	//deal cards
 	players.forEach(function(player) {
@@ -468,13 +472,29 @@ function nextTurn(){
 	if(checkEnd()){
 		gameEnd();
 	} else {
-		currentTurn = (currentTurn + 1) % players.length;
-		if(players[currentTurn].userData.tiles.length != 0){
-			console.log("It is " + players[currentTurn].userData.userName + "'s turn!")
-			message(players[currentTurn], "It is your turn!", gameColor);
-		} else {
-			players[currentTurn].userData.skippedTurn = true;
-			nextTurn();
+		currentTurn = (currentTurn + 1)%players.length
+		if(currentTurn>-1){
+			if(!players[currentTurn].userData.playedCard){
+				sendBoardState()
+				console.log("movemose")
+				players[currentTurn].userData.playedCard=false	
+				currentTurn=-1
+				io.sockets.emit('currentTurn',currentTurn)
+				gameStatus=gameMode.PLAYTILE
+				message( io.sockets, 'time to move moose' , gameColor)
+			}else{
+				//currentTurn = (currentTurn + 1) % players.length;
+				console.log("It is " + players[currentTurn].userData.userName + "'s turn!")
+				message(players[currentTurn], "It is your turn!", gameColor);
+				message(io.sockets,"It is " + players[currentTurn].userData.userName + "'s turn!", gameColor)
+				sendBoardState()
+				io.sockets.emit('currentTurn',currentTurn)
+				players[currentTurn].userData.playedCard=false	
+			}
+			
+		}else{
+			io.sockets.emit('currentTurn',-1)
+			message( io.sockets, 'time to move moose' , gameColor)
 		}
 	}
 }

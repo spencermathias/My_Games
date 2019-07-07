@@ -5,7 +5,7 @@
 //events
 
 //network definitions
-const localAddress = 'localhost'//'192.168.1.124'
+const localAddress = '192.168.1.124'
 const localPort = '8080'
 const publicAddress = 'localhost:8080'//184.167.236.159'
 
@@ -152,7 +152,10 @@ class Button {
 	
 	click(){
 		//TODO: show the posible move locations
-		if(validMove(addcord(getcord(reBoardState,myUserlistIndex),this.cord,-1))){
+		let validselect=false
+		validselect=validselect||validMove(addcord(getcord(reBoardState,myUserlistIndex),this.cord,-1))
+		validselect=validselect||reBoardState[this.cord.y][this.cord.x]!=-1
+		if(validselect){
 			selected=this
 			selected.visible=true
 		}else{
@@ -538,8 +541,8 @@ class SubmitButton extends Button{
 			console.log("sending to server"); 
 			switch(this.type){
 				case 'dist':
-					if (selected.value!=-1){
-						socket.emit('recieveDistanceQuestion',selected.value)
+					if (selected.text!=-1){
+						socket.emit('recieveDistanceQuestion',selected.text)
 					}
 				break;
 				case 'yesNo':
@@ -548,7 +551,12 @@ class SubmitButton extends Button{
 					}
 				break;
 				case 'move':
-					socket.emit('recieveMove',{x:1,y:1})
+					let movement=addcord(selected.cord,getcord(reBoardState,myUserlistIndex),-1)
+					socket.emit('recieveMove',movement)
+					selected.visible=false
+				break;
+				case 'found':
+					socket.emit("foundMoose")
 				break
 			}
 		}
@@ -687,6 +695,7 @@ class Board {
 
 var socket = io(publicAddress); //try public address //"24.42.206.240" for alabama
 var trylocal = 0;
+var currentTurn=-1
 socket.on('connect_error',function(error){
 	console.log("I got an error!", error);
 	console.log("socket to:", socket.disconnect().io.uri, "has been closed.");
@@ -725,6 +734,12 @@ socket.on('connect', function(){
 socket.on('allTiles', function(inAllTiles){
 	allTiles = inAllTiles;
 });
+socket.on('currentTurn',function(currentTurn){
+	currentTurn=currentTurn
+	if(currentTurn==myUserlistIndex){
+		drawState=1
+	}else{drawState=2}
+});
 
 function changeName(userId){
 	if(userId == socket.id){
@@ -743,6 +758,7 @@ function changeName(userId){
 
 /*Initializing the connection with the server via websockets */
 var myTiles = [];
+var theirTiles = [];
 var boardState = [[]];
 var reBoardState=[[]];
 var newState = [[]];
@@ -841,6 +857,16 @@ socket.on('tiles', function(tiles){
 	//resizeDrawings();
 	console.log('tiles updated: ', myTiles);
 });
+socket.on('playedTiles',function (tiles){
+	theirTiles=[];//delete tiles
+	for(let i=0; i<tiles.length;i++){
+		if (tiles[i]!=-1){
+			let tile = new doubleButton(tiles[i], (canvas.width/2) + (tileWidth*2 + 20) * (i-(tiles.length-1)/2) , (tileHeight + 20), tileWidth*2, tileHeight, cards);
+			//shapes[0].concat(tile.subButtons)
+			theirTiles.push(tile)
+		}
+	}
+})
 
 socket.on('boardState', function(recievedBoardState){
 	board.updateFromServer(recievedBoardState);
@@ -916,6 +942,7 @@ function checkClick(event){
 var yesNoAsk=new SubmitButton(canvas.height*3/4,300,"yes or No?",'yesNo')
 var distance2moose=new SubmitButton(canvas.height/2,300,"Distance?",'dist')
 var movePiece=new SubmitButton(canvas.height/4,300,"move","move")
+var endgame=new SubmitButton(150,300,"I'm on the moose",'found')
 
 //drawing stuff
 
@@ -925,25 +952,30 @@ function draw(){
 	ctx.textBaseline = "middle";
 	//console.log('draw: ', shapes );
 	ctx.clearRect(0,0,canvas.width, canvas.height);
-	
+	if(endgame!=undefined){
+		shapes[0] = shapes[0].concat(endgame)
+	}
+	for(var i = 0; i < myTiles.length; i++){
+		shapes[0] = shapes[0].concat( myTiles[i].subButtons );//1st layer
+	}
+	for(var i = 0; i < theirTiles.length; i++){
+		shapes[0] = shapes[0].concat( theirTiles[i].subButtons );//1st layer
+	}
 	//var radius = (Math.min(canvas.width, canvas.height-140)/2)-50;
 	switch(drawState){
 		case 1:
 			if(boardState.length > 0){
 				board.x=canvas.width-(board.columns+3)*board.columnThickness/2
 				board.draw(ctx);
-				for(var i = 0; i < myTiles.length; i++){
-					shapes[0] = shapes[0].concat( myTiles[i].subButtons );//1st layer
-				}
-				if(movePiece!=undefined){
-					shapes[0] = shapes[0].concat(movePiece)
-				}
-				if(distance2moose != undefined){
-					shapes[0] = shapes[0].concat(distance2moose)
-				}
-				if(yesNoAsk!=undefined){
-					shapes[0] = shapes[0].concat(yesNoAsk)
-				}
+			}
+			if(movePiece!=undefined){
+				shapes[0] = shapes[0].concat(movePiece)
+			}
+			if(distance2moose != undefined){
+				shapes[0] = shapes[0].concat(distance2moose)
+			}
+			if(yesNoAsk!=undefined){
+				shapes[0] = shapes[0].concat(yesNoAsk)
 			}
 			for( var i = shapes.length-1; i >= 0; i -= 1){
 				//if(i==0 && shapes[0].length > 0){debugger;}
@@ -965,7 +997,6 @@ function draw(){
 				board.x=canvas.width/2
 				board.draw(ctx);
 			}
-			
 			//player tiles
 			for(var i = 0; i < myTiles.length; i++){
 				//if(myTurn){
@@ -1006,11 +1037,7 @@ function draw(){
 					shapes[i][j].draw(ctx);
 				}
 			}
-
-
-
-
-
+		break
 	}
 	setTimeout(draw, 100); //repeat
 }
