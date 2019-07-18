@@ -1,4 +1,5 @@
 yesno={
+    moose:'',
     // thanks to Neel Somani for the majority of this code find his writup athttps://www.apptic.me/blog/evaluating-mathematical-expression-javascript.php
     // and on linked in at https://www.linkedin.com/in/neelsomani/
     // replace all fx
@@ -81,7 +82,7 @@ yesno={
         }
         //while (strContain(eq,"distance")) return(replaceAll(eq,'distance','')); 
         
-        while (this.strContain(eq, "*") || strContain(eq, "/")) {
+        while (this.strContain(eq, "*") || this.strContain(eq, "/")) {
             var multiply = true;
             if (eq.indexOf("*") < eq.indexOf("/")) {
                 multiply = (this.strContain(eq, "*"));
@@ -101,10 +102,13 @@ yesno={
          // account for things like (-3)^2
         return eq;
     }, // main recursive fx + PEMDAS
-    var moose=''
-    var moosecord=parsePath(moose)
-    moosecord.y=moosecord.dy+4
-    moosecord.x=moosecord.dx+4
+    //moose:''
+    moosecord:function(moosepath){
+        let moosecord=this.parsePath(moosepath)
+        moosecord.y=moosecord.dy+4
+        moosecord.x=moosecord.dx+4
+        return moosecord
+    },
 
     addcord:function (a,b,neg=1){
         let c={}
@@ -154,7 +158,7 @@ yesno={
         let eq=text+''
         let obj=[]
         for (i=0;i<2;i++){
-            if(this.strContain(eq,'moose')){obj[i]=moosecord;eq=eq.replace('moose','')}else
+            if(this.strContain(eq,'moose')){obj[i]=this.moosecord(this.moose);eq=eq.replace('moose','')}else
             if(this.strContain(eq,'me')){obj[i]=me;eq=eq.replace('me','')}else
             if(this.strContain(eq,'{')){
                 let first=eq.indexOf('{')
@@ -162,7 +166,7 @@ yesno={
                 if (last==-1) {console.log('error')};
                 obj[i]=JSON.parse(eq.substr(first,last))
                 eq=eq.replace(eq.substr(first,last))
-            }else{return 'error'}
+            }else{return 'error1'}
         }
         for(i=0;i<2;i++){
             if(obj[i].x==undefined){obj[i].x=obj[1-i].x};
@@ -175,4 +179,11 @@ yesno={
             if(isNaN(vect.y)){return Math.abs(vect.x)};
         }else{return Math.abs(vect.x)+Math.abs(vect.y)}
     }
+}
+try {
+    module.exports = {
+        yesno
+    }
+}catch (err){
+    console.log("you must be client side!quick"); 
 }

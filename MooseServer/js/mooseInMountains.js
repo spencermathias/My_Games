@@ -7,7 +7,7 @@
 //network definitions
 const localAddress = '192.168.1.124'
 const localPort = '8080'
-const publicAddress = 'localhost:8080'//184.167.236.159'
+const publicAddress = '184.167.236.159'
 
 
 window.addEventListener('load', function() {
@@ -56,6 +56,74 @@ $('#submit').click(function(){
 	return false;
 });
 
+$('#myText')[0].addEventListener('keyup',function(event){
+	if (event.keyCode === 13) {
+    	// Cancel the default action, if needed
+    	event.preventDefault();
+    	// Trigger the button element with a click
+  		var message={data:$('#myText').val()}
+	  	if(!moosecordget){	
+	  		if(moose==undefined){
+	  			let error='you do not have a test moose location'
+	  			$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
+	  			$('#response').text('please type guess for moose example "{"x":4,"y":4}"')
+	  			moosecordget=true
+	  		} else{
+	  			if(moose.x==undefined){
+	  				let error='you do not have a test moose.x location'
+					$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
+	  				$('#response').text('please type guess for moose example "{"x":4}"')
+	  				moosecordget=true
+	  			}else{moosecordget=false}
+	  			if(moose.y=undefined){
+	  				let error='you do not have a test moose.y location'
+					$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
+	  				$('#response').text('please type guess for moose example "{y":4}"')
+	  				moosecordget=true
+	  			}else{moosecordget=moosecordget||false}
+	  		}
+	  		if(!moosecordget){
+	  			$('#chatlog').append('<div style=color:#009900">'+message.data+'</div>'); /*appending the data on the page using Jquery */
+	  			let answer=(yesno.solveStr(message.data))
+	  			if(answer=='0'||answer=='1'){
+	  				if(answer==true){
+		  				$('#chatlog').append('<div style=color:#009900">true</div>'); /*appending the data on the page using Jquery */
+		  			}else{
+		  				$('#chatlog').append('<div style=color:#009900">false</div>');
+		  			}
+		  		}else{
+		  			$('#chatlog').append('<div style=color:#009900">error</div>'); /*appending the data on the page using Jquery */
+		  		}
+				$('#response').text(yesno.solveStr(message.data));
+				//$('#chatlog').scroll();
+				$('#chatlog').animate({scrollTop: 1000000})
+				$('#myText').val('');
+	  		}
+	  	}else{
+	  		if(yesno.strContain(message.data,'{')){
+                let first=message.data.indexOf('{')
+                let last=message.data.indexOf('}')+1
+                if (last==-1) {
+                	console.log('error');
+                	let error = 'did not understand the JSON text try again'
+                	$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
+                }else{
+                	moose=JSON.parse(message.data.substr(first,last))
+                	let tested='moose='+message.data.substr(first,last)
+                	$('#chatlog').append('<div style="color:#009900">'+tested+'</div>'); /*appending the data on the page using Jquery */
+                	moosecordget=false
+                	$('#myText').val('');
+                }
+            }else{
+            	error='did not include"{"'
+            	$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
+            }
+	  	}
+	}
+	//socket.send(JSON.stringify(data)); 
+	return false;
+});
+var moosecordget=false
 document.getElementById('title').style.color = '#ff0000'
 function titleFunction(){
 	let title = document.getElementById('title')
@@ -546,8 +614,8 @@ class SubmitButton extends Button{
 					}
 				break;
 				case 'yesNo':
-					if (selected.string!=undefined){
-						socket.emit('recieveYesNoQuestion',selected.string)
+					if ($('#myText').val()){
+						socket.emit('recieveYesNoQuestion',$('#myText').val())
 					}
 				break;
 				case 'move':
@@ -777,11 +845,12 @@ var newServerTileColor = '#aae0b3';
 var myTurn = false;
 var myUserlistIndex = 0;
 var myUserlistString = "";
-var Moose=undefined
+var moose=undefined
 
 
 
-Moose=new paun('../images/moose-clipart-Moose-Silhouette.svg',435,398,90,90,{x:5,y:5})
+
+//Moose=new paun('../images/moose-clipart-Moose-Silhouette.svg',435,398,90,90,{x:5,y:5})
 
 socket.on("message",function(message){  
 	/*

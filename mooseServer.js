@@ -6,6 +6,7 @@
 var express = require("express");
 var http = require("http");
 var io = require("socket.io");
+var yesno = require('./MooseServer/js/quick.js')
 var shared = require('./MooseServer/js/shared.js'); //get shared functions
 
 //const spawn = require("child_process").spawn;
@@ -199,6 +200,7 @@ io.sockets.on("connection", function(socket) {
 				playedcards.push(tile.ID)
 				console.log(tile.ID)
 				moose+=tile.path
+				yesno.moose=moose
 				let theTiles=socket.userData.tiles
 				theTiles.splice(theTiles.findIndex(ID => ID === tile.ID),1)
 				socket.userData.tiles=theTiles.concat(cards.deal())
@@ -352,8 +354,20 @@ io.sockets.on("connection", function(socket) {
 					//increment current players turn
 		}
 	});
-	
+	socket.on('yesnoquestion',function(text){
+		message(io.sockets,text, gameColor)
+		//message(io.sockets,'true',gameColor)
+		let answer=yesno.yesno.solveStr(text)
+		if(answer=='0'||answer=='1'){
+			if(answer=='1'){
+				message(io.sockets,'true',gameColor)
+			}else{message(io.sockets,'false',gameColor)}
+		}else{
+			message(io.sockets,'error',gameColor)
+		}
+	});
 });
+
 
 function checkStart() {	
     if( gameStatus === gameMode.LOBBY) {

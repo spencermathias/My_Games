@@ -71,7 +71,28 @@
 	overflow: hidden;
 	height:100%;
 }
-
+#inputbar{
+	display: flex;
+	flex-direction: column;
+	/* border: 1px solid #00aa00; */
+	width: 20%;
+	min-width: 200px;
+	padding: 5px;
+	color: #FFFFFF;
+	background: #888888;
+	overflow: hidden;
+	height:100%;
+}
+#myText{
+	display: block;
+	position:absolute;
+	width: 20%;
+	height: 30px;
+	top: 20px;
+	left: 10px;
+	background: #888888;
+	z-index: 2;
+}
 #footer { 
 	display: none; /* flex */
 	border:5px solid #ff0000;
