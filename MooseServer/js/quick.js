@@ -159,7 +159,7 @@ yesno={
         let obj=[]
         for (i=0;i<2;i++){
             if(this.strContain(eq,'moose')){obj[i]=this.moosecord(this.moose);eq=eq.replace('moose','')}else
-            if(this.strContain(eq,'me')){obj[i]=me;eq=eq.replace('me','')}else
+            if(this.strContain(eq,"'E'")){obj[i]={x:9,y:4};eq=eq.replace("'E'",'')}else
             if(this.strContain(eq,'{')){
                 let first=eq.indexOf('{')
                 let last=eq.indexOf('}')+1
@@ -181,9 +181,7 @@ yesno={
     }
 }
 try {
-    module.exports = {
-        yesno
-    }
+    module.exports = yesno
 }catch (err){
     console.log("you must be client side!quick"); 
 }

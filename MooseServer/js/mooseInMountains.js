@@ -7,7 +7,7 @@
 //network definitions
 const localAddress = '192.168.1.124'
 const localPort = '8080'
-const publicAddress = '184.167.236.159'
+const publicAddress = '192.168.1.124'// '184.167.236.159'
 
 
 window.addEventListener('load', function() {
@@ -62,20 +62,21 @@ $('#myText')[0].addEventListener('keyup',function(event){
     	event.preventDefault();
     	// Trigger the button element with a click
   		var message={data:$('#myText').val()}
+  		if(message.data=='mooseReset'){moosecordget=true};
 	  	if(!moosecordget){	
-	  		if(moose==undefined){
+	  		if(yesno.moose==''){
 	  			let error='you do not have a test moose location'
 	  			$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
 	  			$('#response').text('please type guess for moose example "{"x":4,"y":4}"')
 	  			moosecordget=true
 	  		} else{
-	  			if(moose.x==undefined){
+	  			if(yesno.moose.x==undefined){
 	  				let error='you do not have a test moose.x location'
 					$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
 	  				$('#response').text('please type guess for moose example "{"x":4}"')
 	  				moosecordget=true
 	  			}else{moosecordget=false}
-	  			if(moose.y=undefined){
+	  			if(yesno.moose.y==undefined){
 	  				let error='you do not have a test moose.y location'
 					$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
 	  				$('#response').text('please type guess for moose example "{y":4}"')
@@ -108,7 +109,7 @@ $('#myText')[0].addEventListener('keyup',function(event){
                 	let error = 'did not understand the JSON text try again'
                 	$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
                 }else{
-                	moose=JSON.parse(message.data.substr(first,last))
+                	yesno.moose=cord2dpath(JSON.parse(message.data.substr(first,last)))
                 	let tested='moose='+message.data.substr(first,last)
                 	$('#chatlog').append('<div style="color:#009900">'+tested+'</div>'); /*appending the data on the page using Jquery */
                 	moosecordget=false
@@ -157,12 +158,14 @@ var tilePadding = 5;
 var allTiles = [];
 var serverTiles = [];
 var selected = undefined;
+var myLastChoice = undefined
 var highlightME = undefined;
 var scoreIsValid = false;	
 var newbox = undefined;
 var newbox1 = undefined;
 var newbox2 = undefined;
 var drawState = 2;
+
 
 var canvas = document.getElementById("gameBoard");
 var ctx = canvas.getContext("2d");
@@ -276,7 +279,13 @@ class Tile extends Button{
 					}
 				}
 			}
+			
 		}
+		
+		if(this.cord.x==yesno.moosecord(yesno.moose).x&&this.cord.y==yesno.moosecord(yesno.moose).y){
+			drawPerson(ctx,this.x,this.y,10,10,'#000000')
+		}
+		
 	}
 }
 
@@ -457,6 +466,7 @@ class doubleButton{
 
 		this.tileData = Deck.getProperties(tileData);
 		this.tileData.ID=tileData
+		this.chosen=undefined
 
 		this.arrowb=addcord(this.tileData.mean,this.tileData.dif)
 		this.arrowg=addcord(this.tileData.mean,this.tileData.dif,-1)
@@ -490,19 +500,31 @@ class doubleButton{
 		
 	}
 	
-	drawOutline(color){ //TODO: move to sub buttons
-		this.highlightColor = color;
-	}
+
 	click(direction){
 		//console.log("This button has not been overloaded yet!");
 		let tile={ID:-1,path:''}
 		tile.ID=this.tileData
-		if(direction=='L'){
-			tile.path=this.arrowb
-		}else{tile.path=this.arrowg}
+		// if(direction=='L'){
+		// 	tile.path=this.arrowb
+		// }else{tile.path=this.arrowg}
+		tile.path=direction
+		if(direction!=this.chosen){
+			yesno.moose+=tile.path
+			if(this.chosen!=undefined){
+				yesno.moose+=cord2dpath({'x':-parsePath(this.chosen).dx,'y':-parsePath(this.chosen).dy})
+			}
+			this.chosen=direction
+		}else{
+			yesno.moose+=cord2dpath({'x':-parsePath(tile.path).dx,'y':-parsePath(tile.path).dy})
+			this.chosen=undefined
+		}
 		console.log(tile)
-		socket.emit("recieveTile",tile)
-		// send cardID to the server and option chosen
+		if(myLastChoice==undefined){
+			myLastChoice=tile
+			socket.emit("recieveTile",tile)
+			// send cardID to the server and option chosen
+		}
 	}
 }
 
@@ -535,9 +557,20 @@ class ButtonHalf{
 		}
 		this.clickArea = {minX: x - width/2, minY: y - height/2, maxX: x + width/2, maxY: y + height/2};
 	}
-	
+
+	drawOutline(color){ 
+		this.highlightColor = color;
+	}
 	
 	draw(ctx){
+		if(this.highlightColor != ""){
+			//console.log(this.highlightColor);
+			ctx.save();
+			ctx.fillStyle = this.highlightColor;
+			roundRect(ctx, this.x-(this.width/2 + tilePadding), this.y-(this.height/2 + tilePadding), this.width+2*tilePadding, this.height+2*tilePadding, this.radius,true, false);
+			ctx.restore();
+			this.highlightColor = "";
+		}
 		if(this.visible){
 			ctx.save();
 			ctx.fillStyle = this.fillColor;
@@ -565,7 +598,7 @@ class ButtonHalf{
 	
 	click(){
 		console.log("This button half");
-		this.parent.click(this.direction)
+		this.parent.click(this.shape)
 		}	
 }
 
@@ -614,8 +647,8 @@ class SubmitButton extends Button{
 					}
 				break;
 				case 'yesNo':
-					if ($('#myText').val()){
-						socket.emit('recieveYesNoQuestion',$('#myText').val())
+					if ($('#myText').val()!=''){
+						socket.emit('yesnoquestion',$('#myText').val())
 					}
 				break;
 				case 'move':
@@ -806,7 +839,10 @@ socket.on('currentTurn',function(currentTurn){
 	currentTurn=currentTurn
 	if(currentTurn==myUserlistIndex){
 		drawState=1
-	}else{drawState=2}
+	}else{
+		drawState=2
+		if(drawState==-1){myLastChoice=undefined};
+	}
 });
 
 function changeName(userId){
@@ -827,6 +863,7 @@ function changeName(userId){
 /*Initializing the connection with the server via websockets */
 var myTiles = [];
 var theirTiles = [];
+var theirNames = [];
 var boardState = [[]];
 var reBoardState=[[]];
 var newState = [[]];
@@ -845,7 +882,8 @@ var newServerTileColor = '#aae0b3';
 var myTurn = false;
 var myUserlistIndex = 0;
 var myUserlistString = "";
-var moose=undefined
+var moose1=''
+var moose=''
 
 
 
@@ -928,10 +966,22 @@ socket.on('tiles', function(tiles){
 });
 socket.on('playedTiles',function (tiles){
 	theirTiles=[];//delete tiles
+	theirNames=[]
 	for(let i=0; i<tiles.length;i++){
 		if (tiles[i]!=-1){
 			let tile = new doubleButton(tiles[i], (canvas.width/2) + (tileWidth*2 + 20) * (i-(tiles.length-1)/2) , (tileHeight + 20), tileWidth*2, tileHeight, cards);
+			if(tiles[i]==myLastChoice.ID){
+				tile.chosen=myLastChoice.path
+				yesno.moose+=myLastChoice.path
+			}
 			//shapes[0].concat(tile.subButtons)
+			let namecard={
+				x:(canvas.width/2) + (tileWidth*2 + 20) * (i-(tiles.length-1)/2),
+				y:20,
+				name:userList[i].userName
+			}
+
+			theirNames.push(namecard)
 			theirTiles.push(tile)
 		}
 	}
@@ -1019,6 +1069,7 @@ function draw(){
 	shapes = [[],[],[]]; //first object is top layer, second is middle, last is bottom layer
 	ctx.textAlign="center";
 	ctx.textBaseline = "middle";
+	ctx.font = "50px Comic Sans MS"
 	//console.log('draw: ', shapes );
 	ctx.clearRect(0,0,canvas.width, canvas.height);
 	if(endgame!=undefined){
@@ -1087,6 +1138,14 @@ function draw(){
 				}
 
 			}
+			for(let i = 0; i<theirTiles.length;i++){
+				if(theirTiles[i].chosen!=undefined){
+					for(let j=0;j<theirTiles[i].subButtons.length;j++){
+						if(theirTiles[i].chosen==theirTiles[i].subButtons[j].shape)
+							theirTiles[i].subButtons[j].drawOutline('#005500')
+					}
+				}
+			}
 			//place questions on board 
 
 			
@@ -1108,6 +1167,12 @@ function draw(){
 			}
 		break
 	}
+	if (theirNames.length>0){
+		for(let i=0;i<theirNames.length;i++){
+			ctx.fillText(theirNames[i].name,theirNames[i].x,theirNames[i].y)
+		}
+	}
+
 	setTimeout(draw, 100); //repeat
 }
 draw();

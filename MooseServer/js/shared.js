@@ -1,5 +1,5 @@
 var numberOfTilesForHand = 4;
-var movemax=2
+var movemax=1
 
 var blankTile = {owner: "board", number: -1, id: -1};
 function newBlankTile(){

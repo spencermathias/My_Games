@@ -70,6 +70,7 @@ var playedcards=[]
 var allPlayedcards = []
 var moose=''
 var cards = undefined
+var partTurn=2
 
 
 console.log("Server Started!");
@@ -235,7 +236,11 @@ io.sockets.on("connection", function(socket) {
 					}
 				}
 				//boardState=shared.validMove(movement,boardState,currentTurn)
-				nextTurn()
+				partTurn-=1
+				sendBoardState()
+				if(partTurn<1){
+					nextTurn()
+				}
 				
 			}else{
 				console.log(__line,'outofTurn');
@@ -287,61 +292,63 @@ io.sockets.on("connection", function(socket) {
 	socket.on("recieveDistanceQuestion", function(tileID){
 		if (gameStatus === gameMode.MOVEORQUESTION){
 			if(socket.userData.ID==currentTurn){
-				if (tileID!=-1){
-					var moosecord=shared.parsePath(moose)
-					moosecord.y=moosecord.dy
-					moosecord.x=moosecord.dx
-					moosecord=shared.addcord(moosecord,{x:4,y:4})
-					console.log('moosecord',moosecord.x,moosecord.y)
-					let mooseDistance={}
-					let name=''
-					if (tileID>=0) {
-						console.log(tileID)
-						for(let i=0; i<boardState.length; i++){
-							let x=boardState[i].findIndex(function(ID){return (ID == tileID)})
-							console.log(i)
-							if(x!=-1){
-								mooseDistance=shared.addcord({x:x,y:i},moosecord,-1)
-								currentTurn++
-								currentTurn%=players.length
-								name=players[tileID].userData.userName
-								console.log(players[tileID].userData.userName,x,i)
-								console.log('moosecord',moosecord.x,moosecord.y)
-								break
+				if(partTurn==2){
+					if (tileID!=-1){
+						var moosecord=shared.parsePath(moose)
+						moosecord.y=moosecord.dy
+						moosecord.x=moosecord.dx
+						moosecord=shared.addcord(moosecord,{x:4,y:4})
+						console.log('moosecord',moosecord.x,moosecord.y)
+						let mooseDistance={}
+						let name=''
+						if (tileID>=0) {
+							console.log(tileID)
+							for(let i=0; i<boardState.length; i++){
+								let x=boardState[i].findIndex(function(ID){return (ID == tileID)})
+								console.log(i)
+								if(x!=-1){
+									mooseDistance=shared.addcord({x:x,y:i},moosecord,-1)
+									currentTurn++
+									currentTurn%=players.length
+									name=players[tileID].userData.userName
+									console.log(players[tileID].userData.userName,x,i)
+									console.log('moosecord',moosecord.x,moosecord.y)
+									break
+								}
+							}
+						}else{
+							name=''+tileID
+							switch(tileID){
+								case 'N':
+									mooseDistance=shared.addcord({x:4,y:-1},moosecord,-1)
+									currentTurn++
+									currentTurn%=players.length
+									break
+								case 'E':
+									mooseDistance=shared.addcord({x:9,y:4},moosecord,-1)
+									currentTurn++
+									currentTurn%=players.length
+									break
+								case 'S':
+									mooseDistance=shared.addcord({x:4,y:9},moosecord,-1)
+									currentTurn++
+									currentTurn%=players.length
+									break
+								case 'W':
+									mooseDistance=shared.addcord({x:-1,y:4},moosecord,-1)
+									currentTurn++
+									currentTurn%=players.length
+									break
+								default:
+									console.log("not an option")
 							}
 						}
-					}else{
-						name=''+tileID
-						switch(tileID){
-							case 'N':
-								mooseDistance=shared.addcord({x:4,y:-1},moosecord,-1)
-								currentTurn++
-								currentTurn%=players.length
-								break
-							case 'E':
-								mooseDistance=shared.addcord({x:9,y:4},moosecord,-1)
-								currentTurn++
-								currentTurn%=players.length
-								break
-							case 'S':
-								mooseDistance=shared.addcord({x:4,y:9},moosecord,-1)
-								currentTurn++
-								currentTurn%=players.length
-								break
-							case 'W':
-								mooseDistance=shared.addcord({x:-1,y:4},moosecord,-1)
-								currentTurn++
-								currentTurn%=players.length
-								break
-							default:
-								console.log("not an option")
-						}
+						let mooseDist=Math.abs(mooseDistance.x)+Math.abs(mooseDistance.y)
+						moosecall='The moose is '+mooseDist+" away from "+name 
+						let mooselen=Math.abs(mooseDistance.x)+Math.abs(mooseDistance.y)
+						message( io.sockets, moosecall , gameColor);
+						nextTurn()
 					}
-					let mooseDist=Math.abs(mooseDistance.x)+Math.abs(mooseDistance.y)
-					moosecall='The moose is '+mooseDist+" away from "+name 
-					let mooselen=Math.abs(mooseDistance.x)+Math.abs(mooseDistance.y)
-					message( io.sockets, moosecall , gameColor);
-					nextTurn()
 				}
 			}else{
 				console.log(__line,'outofTurn');
@@ -357,7 +364,7 @@ io.sockets.on("connection", function(socket) {
 	socket.on('yesnoquestion',function(text){
 		message(io.sockets,text, gameColor)
 		//message(io.sockets,'true',gameColor)
-		let answer=yesno.yesno.solveStr(text)
+		let answer=yesno.solveStr(text)
 		if(answer=='0'||answer=='1'){
 			if(answer=='1'){
 				message(io.sockets,'true',gameColor)
@@ -365,6 +372,8 @@ io.sockets.on("connection", function(socket) {
 		}else{
 			message(io.sockets,'error',gameColor)
 		}
+		partTurn-=1
+		if(partTurn<1){nextTurn()}
 	});
 });
 
@@ -496,6 +505,7 @@ function nextTurn(){
 				io.sockets.emit('currentTurn',currentTurn)
 				gameStatus=gameMode.PLAYTILE
 				message( io.sockets, 'time to move moose' , gameColor)
+				partTurn=2
 			}else{
 				//currentTurn = (currentTurn + 1) % players.length;
 				console.log("It is " + players[currentTurn].userData.userName + "'s turn!")
@@ -503,7 +513,8 @@ function nextTurn(){
 				message(io.sockets,"It is " + players[currentTurn].userData.userName + "'s turn!", gameColor)
 				sendBoardState()
 				io.sockets.emit('currentTurn',currentTurn)
-				players[currentTurn].userData.playedCard=false	
+				players[currentTurn].userData.playedCard=false
+				partTurn=2	
 			}
 			
 		}else{
@@ -637,7 +648,7 @@ function gameEnd() {
         client.userData.statusColor = notReadyColor;
     });
     gameStatus = gameMode.LOBBY;
-    nextUserID=0
+    nextUserID=-1
     updateUsers();
 }
 
