@@ -1,5 +1,7 @@
 yesno={
     moose:'',
+    cardsPlayed:[],
+    cards:[],
     // thanks to Neel Somani for the majority of this code find his writup athttps://www.apptic.me/blog/evaluating-mathematical-expression-javascript.php
     // and on linked in at https://www.linkedin.com/in/neelsomani/
     // replace all fx
@@ -74,6 +76,10 @@ yesno={
                 var solvedStr = this.solveStr(nested);
                 solvedStr=this.distance(solvedStr)
                 var preStr = "distance(" + nested + ")";
+            }else if(eq.substr(first-5=='chose')){
+                var solvedStr=this.solveStr(nested)
+                solvedStr=this.choose(solvedStr)
+                var preStr = "chose(" + nested + ")";
             }else{
                 var solvedStr = this.solveStr(nested);
                 var preStr = "(" + nested + ")";
@@ -163,9 +169,9 @@ yesno={
             if(this.strContain(eq,'{')){
                 let first=eq.indexOf('{')
                 let last=eq.indexOf('}')+1
-                if (last==-1) {console.log('error')};
+                if (last==0) {console.log('error')};
                 obj[i]=JSON.parse(eq.substr(first,last))
-                eq=eq.replace(eq.substr(first,last))
+                eq=eq.replace(eq.substr(first,last),'')
             }else{return 'error1'}
         }
         for(i=0;i<2;i++){
@@ -178,7 +184,49 @@ yesno={
             if(isNaN(vect.x)){return Math.abs(vect.y)};
             if(isNaN(vect.y)){return Math.abs(vect.x)};
         }else{return Math.abs(vect.x)+Math.abs(vect.y)}
+    },
+    choose:function(text){
+        console.log(text)
+        let chosen=0
+        for(let i=0;i<this.cardsPlayed.length;i++){
+            console.log(this.cardsPlayed[i].userName)
+            if(this.strContain(text,this.cardsPlayed[i].userName)){
+                text=text.replace(this.cardsPlayed[i].userName,'')
+                if(this.strContain(text,'blue')||this.strContain(text,'Blue')){
+                    let lastPathCord={}
+                    console.log('chose blue')
+                    lastPathCord.x=this.parsePath(this.cardsPlayed[i].lastPath).dx
+                    lastPathCord.y=this.parsePath(this.cardsPlayed[i].lastPath).dy
+                    chosen=this.addcord(this.cards.getProperties(this.cardsPlayed[i].lastID).mean,this.cards.getProperties(this.cardsPlayed[i].lastID).dif)
+                    chosen=(Math.abs(this.addcord(lastPathCord,chosen,-1).x)+Math.abs(this.addcord(lastPathCord,chosen,-1).y)==0)
+                }else if (this.strContain(text,'green')||this.strContain(text,'Green')) {
+                    let lastPathCord={}
+                    console.log('chose green')
+                    lastPathCord.x=parsePath(this.cardsPlayed[i].lastPath).dx
+                    lastPathCord.y=parsePath(this.cardsPlayed[i].lastPath).dy
+                    chosen=addcord(cards.getProperties(this.cardsPlayed[i].lastID).mean,cards.getProperties(this.cardsPlayed[i].lastID).dif,-1)
+                    chosen=(Math.abs(addcord(lastPathCord,chosen,-1).x)+Math.abs(addcord(lastPathCord,chosen,-1).y)==0)
+                }else if(this.strContain(text,this.cardsPlayed[i].lastPath)){
+                    chosen=true
+                }else{chosen=false}
+                console.log(+chosen)
+                return +chosen
+                break
+            }
+        }
+        if(this.strContain(text,'[')){
+            let first=text.indexOf('[')+1
+            let last=text.indexOf(']')-1
+            console.log(text.substr(first,last))
+            if (last==-1) {
+                console.log('no end "]"')
+            }else if(this.strContain(text,this.cardsPlayed[text.substr(first,last)].lastPath)){
+                return chosen=+true
+            }else{return chosen=+false}
+
+        }else{console.log('no player chosen')}
     }
+    //chooseColor:function()
 }
 try {
     module.exports = yesno

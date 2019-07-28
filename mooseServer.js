@@ -196,17 +196,21 @@ io.sockets.on("connection", function(socket) {
 		if (gameStatus === gameMode.PLAYTILE){
 			if (!socket.userData.playedCard){
 				socket.userData.playedCard=true
+				//set starting player
 				if(currentTurn==-1){currentTurn=(socket.userData.ID+players.length-1)%players.length}
+				//record tile
 				allPlayedcards[socket.userData.ID]=tile.ID
-				playedcards.push(tile.ID)
+				playedcards.push(tile.path)
 				console.log(tile.ID)
 				moose+=tile.path
 				yesno.moose=moose
+				yesno.cardsPlayed[socket.userData.ID].lastID=tile.ID
+				yesno.cardsPlayed[socket.userData.ID].lastPath=tile.path
 				let theTiles=socket.userData.tiles
 				theTiles.splice(theTiles.findIndex(ID => ID === tile.ID),1)
 				socket.userData.tiles=theTiles.concat(cards.deal())
 				socket.emit("tiles", socket.userData.tiles)
-				console.log(playedcards)
+				console.log(allPlayedcards)
 				io.sockets.emit('playedTiles',allPlayedcards)
 				checkmoose()
 			}
@@ -365,6 +369,7 @@ io.sockets.on("connection", function(socket) {
 		message(io.sockets,text, gameColor)
 		//message(io.sockets,'true',gameColor)
 		let answer=yesno.solveStr(text)
+		console.log(answer)
 		if(answer=='0'||answer=='1'){
 			if(answer=='1'){
 				message(io.sockets,'true',gameColor)
@@ -420,6 +425,7 @@ function gameStart() {
 	players = [];
 	spectators = [];
 	cards=new shared.Deck({mean:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0},0,0],dif:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0}]})
+	yesno.cards=cards
 	moose=''
 	playedcards=[]
 	let playerCount=0
@@ -550,6 +556,7 @@ function updateUsers(target = io.sockets){
     console.log(__line,"----------------Done Sending List----------------");
 	
 	io.sockets.emit('userList', userList);
+	yesno.cardsPlayed=userList
 }
 
 function getUserSendData(client){
@@ -571,10 +578,10 @@ function updateBoard(socketSend, titleColor, showBoard) { //switches between tit
     };
     socketSend.emit("showBoard", showBoardMessage);
 }
-function parse(text){
+/*function parse(text){
 	text.splice('+')
 	
-}
+}*/
 
 
 
@@ -645,7 +652,7 @@ function gameEnd() {
 	spectators = [];
     allClients.forEach(function(client) {
         client.userData.ready = false;
-        client.userData.statusColor = notReadyColor;
+        //client.userData.statusColor = notReadyColor;
     });
     gameStatus = gameMode.LOBBY;
     nextUserID=-1

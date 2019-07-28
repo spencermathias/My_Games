@@ -7,7 +7,7 @@
 //network definitions
 const localAddress = '192.168.1.124'
 const localPort = '8080'
-const publicAddress = '192.168.1.124'// '184.167.236.159'
+const publicAddress = '184.167.236.159'
 
 
 window.addEventListener('load', function() {
@@ -69,31 +69,32 @@ $('#myText')[0].addEventListener('keyup',function(event){
 	  			$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
 	  			$('#response').text('please type guess for moose example "{"x":4,"y":4}"')
 	  			moosecordget=true
-	  		} else{
+	  		}/*
+	  		else{
 	  			if(yesno.moose.x==undefined){
 	  				let error='you do not have a test moose.x location'
-					$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
+					$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); //appending the data on the page using Jquery 
 	  				$('#response').text('please type guess for moose example "{"x":4}"')
 	  				moosecordget=true
 	  			}else{moosecordget=false}
 	  			if(yesno.moose.y==undefined){
 	  				let error='you do not have a test moose.y location'
-					$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
+					$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); //appending the data on the page using Jquery 
 	  				$('#response').text('please type guess for moose example "{y":4}"')
 	  				moosecordget=true
 	  			}else{moosecordget=moosecordget||false}
-	  		}
+	  		}*/
 	  		if(!moosecordget){
-	  			$('#chatlog').append('<div style=color:#009900">'+message.data+'</div>'); /*appending the data on the page using Jquery */
+	  			$('#chatlog').append('<div style=color:#009900">'+message.data+'</div>'); //appending the data on the page using Jquery 
 	  			let answer=(yesno.solveStr(message.data))
 	  			if(answer=='0'||answer=='1'){
 	  				if(answer==true){
-		  				$('#chatlog').append('<div style=color:#009900">true</div>'); /*appending the data on the page using Jquery */
+		  				$('#chatlog').append('<div style=color:#009900">true</div>'); //appending the data on the page using Jquery 
 		  			}else{
 		  				$('#chatlog').append('<div style=color:#009900">false</div>');
 		  			}
 		  		}else{
-		  			$('#chatlog').append('<div style=color:#009900">error</div>'); /*appending the data on the page using Jquery */
+		  			$('#chatlog').append('<div style=color:#009900">error</div>'); //appending the data on the page using Jquery 
 		  		}
 				$('#response').text(yesno.solveStr(message.data));
 				//$('#chatlog').scroll();
@@ -458,18 +459,18 @@ class paun{
 }
 
 class doubleButton{
-	constructor(tileData, x,y,width,height,Deck){
+	constructor(tileData, x,y,width,height,curentDeck){
 		this.arrowbv = [];
 		this.arrowgv = [];
 		this.arrowb = '';
 		this.arrowg = '';
 
-		this.tileData = Deck.getProperties(tileData);
+		this.tileData = curentDeck.getProperties(tileData);
 		this.tileData.ID=tileData
 		this.chosen=undefined
 
-		this.arrowb=addcord(this.tileData.mean,this.tileData.dif)
-		this.arrowg=addcord(this.tileData.mean,this.tileData.dif,-1)
+		this.arrowb=cord2dpath(addcord(this.tileData.mean,this.tileData.dif))
+		this.arrowg=cord2dpath(addcord(this.tileData.mean,this.tileData.dif,-1))
 		
 		if (cord2dpath(this.arrowb)!=''){
 			this.arrowb=cord2dpath(this.tileData.mean)+cord2dpath(this.tileData.dif)
@@ -522,6 +523,7 @@ class doubleButton{
 		console.log(tile)
 		if(myLastChoice==undefined){
 			myLastChoice=tile
+			yesno.moose+=myLastChoice.path
 			socket.emit("recieveTile",tile)
 			// send cardID to the server and option chosen
 		}
@@ -841,7 +843,7 @@ socket.on('currentTurn',function(currentTurn){
 		drawState=1
 	}else{
 		drawState=2
-		if(drawState==-1){myLastChoice=undefined};
+		if(currentTurn==-1){myLastChoice=undefined};
 	}
 });
 
@@ -888,6 +890,7 @@ var moose=''
 
 
 
+
 //Moose=new paun('../images/moose-clipart-Moose-Silhouette.svg',435,398,90,90,{x:5,y:5})
 
 socket.on("message",function(message){  
@@ -909,6 +912,8 @@ socket.on("message",function(message){
 socket.on('userList',function(data){
 	var userListString = '';
 	userList = data;
+	yesno.cardsPlayed=userList
+	yesno.cards=cards
 	for( var i = 0; i < data.length; i++ ){
 		var header = 'div id="userListDiv'+ i + '"';
 		var click = 'onclick="changeName(' + "'" + data[i].id + "'" + ')"';
@@ -964,25 +969,51 @@ socket.on('tiles', function(tiles){
 	//resizeDrawings();
 	console.log('tiles updated: ', myTiles);
 });
-socket.on('playedTiles',function (tiles){
+socket.on('playedTiles',function (tileIdList){
 	theirTiles=[];//delete tiles
 	theirNames=[]
-	for(let i=0; i<tiles.length;i++){
-		if (tiles[i]!=-1){
-			let tile = new doubleButton(tiles[i], (canvas.width/2) + (tileWidth*2 + 20) * (i-(tiles.length-1)/2) , (tileHeight + 20), tileWidth*2, tileHeight, cards);
-			if(tiles[i]==myLastChoice.ID){
-				tile.chosen=myLastChoice.path
-				yesno.moose+=myLastChoice.path
+	for(let i=0; i<tileIdList.length;i++){
+		if (tileIdList[i]!=-1){
+			let theirnewtile = new doubleButton(tileIdList[i], (canvas.width/2) + (tileWidth*2 + 20) * (i-(tileIdList.length-1)/2) , (tileHeight + 20), tileWidth*2, tileHeight, cards);
+			if(myLastChoice!=undefined){
+				if(tileIdList[i]==myLastChoice.ID){
+					theirnewtile.chosen=myLastChoice.path
+					yesno.cardsPlayed[i].lastID=myLastChoice.ID
+					yesno.cardsPlayed[i].lastPath=myLastChoice.path
+					//yesno.moose+=myLastChoice.path
+				}
+			};
+			//change click function
+			theirnewtile.click=function(direction){
+				let tile={ID:-1,path:''}
+				tile.ID=theirnewtile.tileData
+				// if(direction=='L'){
+				// 	tile.path=this.arrowb
+				// }else{tile.path=this.arrowg}
+				tile.path=direction
+				if(direction!=theirnewtile.chosen){
+					yesno.moose+=tile.path
+					if(theirnewtile.chosen!=undefined){
+						yesno.moose+=cord2dpath({'x':-parsePath(theirnewtile.chosen).dx,'y':-parsePath(theirnewtile.chosen).dy})
+					}
+					theirnewtile.chosen=direction
+					yesno.cardsPlayed[i].lastID=tile.ID
+					yesno.cardsPlayed[i].lastPath=tile.path
+				}else{
+					yesno.moose+=cord2dpath({'x':-parsePath(tile.path).dx,'y':-parsePath(tile.path).dy})
+					theirnewtile.chosen=undefined
+				}
 			}
+
 			//shapes[0].concat(tile.subButtons)
 			let namecard={
-				x:(canvas.width/2) + (tileWidth*2 + 20) * (i-(tiles.length-1)/2),
+				x:(canvas.width/2) + (tileWidth*2 + 20) * (i-(tileIdList.length-1)/2),
 				y:20,
 				name:userList[i].userName
 			}
 
 			theirNames.push(namecard)
-			theirTiles.push(tile)
+			theirTiles.push(theirnewtile)
 		}
 	}
 })
@@ -1096,6 +1127,14 @@ function draw(){
 			}
 			if(yesNoAsk!=undefined){
 				shapes[0] = shapes[0].concat(yesNoAsk)
+			}
+			for(let i = 0; i<theirTiles.length;i++){
+				if(theirTiles[i].chosen!=undefined){
+					for(let j=0;j<theirTiles[i].subButtons.length;j++){
+						if(theirTiles[i].chosen==theirTiles[i].subButtons[j].shape)
+							theirTiles[i].subButtons[j].drawOutline('#005500')
+					}
+				}
 			}
 			for( var i = shapes.length-1; i >= 0; i -= 1){
 				//if(i==0 && shapes[0].length > 0){debugger;}
