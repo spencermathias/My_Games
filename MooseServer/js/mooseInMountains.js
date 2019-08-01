@@ -62,59 +62,48 @@ $('#myText')[0].addEventListener('keyup',function(event){
     	event.preventDefault();
     	// Trigger the button element with a click
   		var message={data:$('#myText').val()}
-  		if(message.data=='mooseReset'){moosecordget=true};
-	  	if(!moosecordget){	
-	  		if(yesno.moose==''){
-	  			let error='you do not have a test moose location'
-	  			$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
-	  			$('#response').text('please type guess for moose example "{"x":4,"y":4}"')
-	  			moosecordget=true
-	  		}/*
-	  		else{
-	  			if(yesno.moose.x==undefined){
-	  				let error='you do not have a test moose.x location'
-					$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); //appending the data on the page using Jquery 
-	  				$('#response').text('please type guess for moose example "{"x":4}"')
-	  				moosecordget=true
-	  			}else{moosecordget=false}
-	  			if(yesno.moose.y==undefined){
-	  				let error='you do not have a test moose.y location'
-					$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); //appending the data on the page using Jquery 
-	  				$('#response').text('please type guess for moose example "{y":4}"')
-	  				moosecordget=true
-	  			}else{moosecordget=moosecordget||false}
-	  		}*/
-	  		if(!moosecordget){
-	  			$('#chatlog').append('<div style=color:#009900">'+message.data+'</div>'); //appending the data on the page using Jquery 
-	  			let answer=(yesno.solveStr(message.data))
-	  			if(answer=='0'||answer=='1'){
-	  				if(answer==true){
-		  				$('#chatlog').append('<div style=color:#009900">true</div>'); //appending the data on the page using Jquery 
-		  			}else{
-		  				$('#chatlog').append('<div style=color:#009900">false</div>');
-		  			}
-		  		}else{
-		  			$('#chatlog').append('<div style=color:#009900">error</div>'); //appending the data on the page using Jquery 
-		  		}
-				$('#response').text(yesno.solveStr(message.data));
-				//$('#chatlog').scroll();
-				$('#chatlog').animate({scrollTop: 1000000})
-				$('#myText').val('');
+  		if(yesno.strContain(message.data,'mooseReset')){moosecordget=true};
+  		if(!moosecordget){
+  			$('#chatlog').append('<div style="color:#009900">'+message.data+'</div>'); //appending the data on the page using Jquery 
+  			let answer=(yesno.solveStr(message.data))
+  			if(answer=='0'||answer=='1'){
+  				if(answer==true){
+	  				$('#chatlog').append('<div style="color:#009900">unofficial test of code </div>')
+	  				$('#chatlog').append('<div style="color:#990000">result true</div>'); //appending the data on the page using Jquery 
+	  			}else{
+	  				$('#chatlog').append('<div style="color:#009900">unofficial test of code</div>');
+	  				$('#chatlog').append('<div style="color:#990000">result false</div>');
+	  			}
+	  		}else{
+	  			$('#chatlog').append('<div style="color:#990000">unofficial test of code result error</div>'); //appending the data on the page using Jquery 
 	  		}
-	  	}else{
+			$('#response').text(yesno.solveStr(message.data));
+			//$('#chatlog').scroll();
+			$('#chatlog').animate({scrollTop: 1000000})
+			$('#myText').val('');
+  		}else{
 	  		if(yesno.strContain(message.data,'{')){
                 let first=message.data.indexOf('{')
                 let last=message.data.indexOf('}')+1
                 if (last==-1) {
                 	console.log('error');
-                	let error = 'did not understand the JSON text try again'
+                	let error = 'did not include"}"'
                 	$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
                 }else{
-                	yesno.moose=cord2dpath(JSON.parse(message.data.substr(first,last)))
-                	let tested='moose='+message.data.substr(first,last)
-                	$('#chatlog').append('<div style="color:#009900">'+tested+'</div>'); /*appending the data on the page using Jquery */
-                	moosecordget=false
-                	$('#myText').val('');
+                	let testcord=''
+                	try{
+                		testcord=JSON.parse(message.data.substr(first,last))
+                		testcord.x-=4
+                		testcord.y-=4
+                		yesno.moose=cord2dpath(testcord)
+                		let tested='moose='+message.data.substr(first,last)
+                		$('#chatlog').append('<div style="color:#009900">'+tested+'</div>'); /*appending the data on the page using Jquery */
+                		moosecordget=false
+                		$('#myText').val('');
+                	}
+                	catch(error){
+                		$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>');
+                	}
                 }
             }else{
             	error='did not include"{"'
@@ -282,8 +271,10 @@ class Tile extends Button{
 			}
 			
 		}
-		
-		if(this.cord.x==yesno.moosecord(yesno.moose).x&&this.cord.y==yesno.moosecord(yesno.moose).y){
+		let moosecord={x:yesno.moosecord(yesno.moose).x,y:yesno.moosecord(yesno.moose).y}
+		moosecord.x=(board.columns+moosecord.x%board.columns)%board.columns
+		moosecord.y=(board.rows+moosecord.y%board.rows)%board.rows
+		if(this.cord.x==moosecord.x&&this.cord.y==moosecord.y){
 			drawPerson(ctx,this.x,this.y,10,10,'#000000')
 		}
 		

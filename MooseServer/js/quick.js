@@ -202,10 +202,10 @@ yesno={
                 }else if (this.strContain(text,'green')||this.strContain(text,'Green')) {
                     let lastPathCord={}
                     console.log('chose green')
-                    lastPathCord.x=parsePath(this.cardsPlayed[i].lastPath).dx
-                    lastPathCord.y=parsePath(this.cardsPlayed[i].lastPath).dy
-                    chosen=addcord(cards.getProperties(this.cardsPlayed[i].lastID).mean,cards.getProperties(this.cardsPlayed[i].lastID).dif,-1)
-                    chosen=(Math.abs(addcord(lastPathCord,chosen,-1).x)+Math.abs(addcord(lastPathCord,chosen,-1).y)==0)
+                    lastPathCord.x=this.parsePath(this.cardsPlayed[i].lastPath).dx
+                    lastPathCord.y=this.parsePath(this.cardsPlayed[i].lastPath).dy
+                    chosen=this.addcord(this.cards.getProperties(this.cardsPlayed[i].lastID).mean,this.cards.getProperties(this.cardsPlayed[i].lastID).dif,-1)
+                    chosen=(Math.abs(this.addcord(lastPathCord,chosen,-1).x)+Math.abs(this.addcord(lastPathCord,chosen,-1).y)==0)
                 }else if(this.strContain(text,this.cardsPlayed[i].lastPath)){
                     chosen=true
                 }else{chosen=false}
