@@ -71,7 +71,8 @@ var allPlayedcards = []
 var moose=''
 var cards = undefined
 var partTurn=2
-
+var turnOrder=[]
+var TurnCount=-1
 
 console.log("Server Started!");
 
@@ -194,23 +195,26 @@ io.sockets.on("connection", function(socket) {
 	
 	socket.on("recieveTile", function(tile){
 		if (gameStatus === gameMode.PLAYTILE){
-			if (!socket.userData.playedCard){
-				socket.userData.playedCard=true
+			if (allPlayedcards[socket.userData.ID]<0){
+				//socket.userData.playedCard=true
 				//set starting player
-				if(currentTurn==-1){currentTurn=(socket.userData.ID+players.length-1)%players.length}
+				//if(currentTurn==-1){currentTurn=(socket.userData.ID+players.length-1)%players.length}
+				//add to plaing order
+				turnOrder.push(socket.userData.ID)
 				//record tile
 				allPlayedcards[socket.userData.ID]=tile.ID
 				playedcards.push(tile.path)
-				console.log(tile.ID)
+				console.log('recieved moose tile #'+tile.ID)
 				moose+=tile.path
 				yesno.moose=moose
 				yesno.cardsPlayed[socket.userData.ID].lastID=tile.ID
 				yesno.cardsPlayed[socket.userData.ID].lastPath=tile.path
+				//remove the selected tile form players hand
 				let theTiles=socket.userData.tiles
 				theTiles.splice(theTiles.findIndex(ID => ID === tile.ID),1)
 				socket.userData.tiles=theTiles.concat(cards.deal())
 				socket.emit("tiles", socket.userData.tiles)
-				console.log(allPlayedcards)
+				console.log('these are the tiles played so far'+allPlayedcards)
 				io.sockets.emit('playedTiles',allPlayedcards)
 				checkmoose()
 			}
@@ -398,21 +402,22 @@ function checkStart() {
 }
 function checkmoose() {	
     if( gameStatus === gameMode.PLAYTILE) {
-        let readyCount = 0;
+        /*let readyCount = 0;
         allClients.forEach(function(client) {
             if( client.userData.playedCard ) {
                 readyCount++;
             }
-        });
-        console.log(readyCount)
-        if(readyCount == players.length) {
-            allClients.forEach(function(client) {
+        });*/
+        console.log('turn order length is '+turnOrder.length)
+        if(turnOrder.length == players.length) {
+            //allClients.forEach(function(client) {
             	//client.userData.playedCard = false 
-            	})
-
-            firstPlayed=-1
+            //	})
+            //firstPlayed=-1
+            turnOrder.push(-1)
             allPlayedcards=Array(players.length).fill(-1)
-            moveORquestion();
+            gameStatus = gameMode.MOVEORQUESTION//moveORquestion();
+            TurnCount=-1
             nextTurn()
         }
     }
@@ -489,44 +494,46 @@ function setUpBoard(){ //set all positions on the board to -1 to indicate no til
 	console.log(boardState)
 	sendBoardState();
 }
-function moveORquestion(){
+/*function moveORquestion(){
 	
 	gameStatus = gameMode.MOVEORQUESTION
 	//questions.visable=true
 
 	//set up board with questions and move abilities
 
-}
+}*/
 function nextTurn(){
 	if(checkEnd()){
 		gameEnd();
 	} else {
-		currentTurn = (currentTurn + 1)%players.length
-		if(currentTurn>-1){
-			if(!players[currentTurn].userData.playedCard){
-				sendBoardState()
-				console.log("movemose")
-				players[currentTurn].userData.playedCard=false	
-				currentTurn=-1
-				io.sockets.emit('currentTurn',currentTurn)
-				gameStatus=gameMode.PLAYTILE
-				message( io.sockets, 'time to move moose' , gameColor)
-				partTurn=2
-			}else{
-				//currentTurn = (currentTurn + 1) % players.length;
-				console.log("It is " + players[currentTurn].userData.userName + "'s turn!")
-				message(players[currentTurn], "It is your turn!", gameColor);
-				message(io.sockets,"It is " + players[currentTurn].userData.userName + "'s turn!", gameColor)
-				sendBoardState()
-				io.sockets.emit('currentTurn',currentTurn)
-				players[currentTurn].userData.playedCard=false
-				partTurn=2	
-			}
-			
+		TurnCount +=1 
+		currentTurn=turnOrder[TurnCount]
+		if(currentTurn==-1||currentTurn===undefined){
+			sendBoardState()
+			console.log("movemose")
+			//players[currentTurn].userData.playedCard=false	
+			currentTurn=-1
+			io.sockets.emit('currentTurn',currentTurn)
+			gameStatus=gameMode.PLAYTILE
+			message( io.sockets, 'time to move moose' , gameColor)
+			turnOrder=[]
+			partTurn=2
 		}else{
+			//currentTurn = (currentTurn + 1) % players.length;
+			console.log('currentTurn'+currentTurn)
+			console.log("It is " + players[currentTurn].userData.userName + "'s turn!")
+			message(players[currentTurn], "It is your turn!", gameColor);
+			message(io.sockets,"It is " + players[currentTurn].userData.userName + "'s turn!", gameColor)
+			sendBoardState()
+			io.sockets.emit('currentTurn',currentTurn)
+			//players[currentTurn].userData.playedCard=false
+			partTurn=2	 
+		}
+			
+		/*else{
 			io.sockets.emit('currentTurn',-1)
 			message( io.sockets, 'time to move moose' , gameColor)
-		}
+		}*/
 	}
 }
 
