@@ -2,6 +2,8 @@ yesno={
     moose:'',
     cardsPlayed:[],
     cards:[],
+    boardCol:9,
+    boardRow:9,
     // thanks to Neel Somani for the majority of this code find his writup athttps://www.apptic.me/blog/evaluating-mathematical-expression-javascript.php
     // and on linked in at https://www.linkedin.com/in/neelsomani/
     // replace all fx
@@ -111,8 +113,8 @@ yesno={
     //moose:''
     moosecord:function(moosepath){
         let moosecord=this.parsePath(moosepath)
-        moosecord.y=moosecord.dy+4
-        moosecord.x=moosecord.dx+4
+        moosecord.y=(this.boardRow+(moosecord.dy+4)%this.boardRow)%this.boardRow
+        moosecord.x=(this.boardCol+(moosecord.dx+4)%this.boardCol)%this.boardCol
         return moosecord
     },
 

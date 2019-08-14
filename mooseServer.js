@@ -276,6 +276,8 @@ io.sockets.on("connection", function(socket) {
 	
 	socket.on("foundMoose", function(){
 		var moosecord=shared.parsePath(moose)
+		moosecord.y=(boardRows+(moosecord.dy+4)%boardRows)%this.boardRows
+        moosecord.x=(boardColumns+(moosecord.dx+4)%this.boardColumns)%this.boardColumns
 		moosecord.y=moosecord.dy
 		moosecord.x=moosecord.dx
 		moosecord=shared.addcord(moosecord,{x:4,y:4})
@@ -303,9 +305,9 @@ io.sockets.on("connection", function(socket) {
 				if(partTurn==2){
 					if (tileID!=-1){
 						var moosecord=shared.parsePath(moose)
-						moosecord.y=moosecord.dy
-						moosecord.x=moosecord.dx
-						moosecord=shared.addcord(moosecord,{x:4,y:4})
+						moosecord.y=(boardRows+(moosecord.dy+4)%boardRows)%this.boardRows
+        				moosecord.x=(boardColumns+(moosecord.dx+4)%this.boardColumns)%this.boardColumns
+						//moosecord=shared.addcord(moosecord,{x:4,y:4})
 						console.log('moosecord',moosecord.x,moosecord.y)
 						let mooseDistance={}
 						let name=''
