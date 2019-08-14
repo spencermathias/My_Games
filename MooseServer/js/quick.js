@@ -78,7 +78,7 @@ yesno={
                 var solvedStr = this.solveStr(nested);
                 solvedStr=this.distance(solvedStr)
                 var preStr = "distance(" + nested + ")";
-            }else if(eq.substr(first-5=='chose')){
+            }else if(eq.substr(first-5,5)=='chose'){
                 var solvedStr=this.solveStr(nested)
                 solvedStr=this.choose(solvedStr)
                 var preStr = "chose(" + nested + ")";
