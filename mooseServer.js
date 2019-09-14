@@ -305,7 +305,7 @@ io.sockets.on("connection", function(socket) {
 				if(partTurn==2){
 					if (tileID!=-1){
 						var moosecord=shared.parsePath(moose)
-						moosecord.y=(boardRows+(moosecord.dy+4)%boardRows)%this.boardRows
+						moosecord.y=(boardRows+(moosecord.dy+4)%boardRows)%boardRows
         				moosecord.x=(boardColumns+(moosecord.dx+4)%boardColumns)%boardColumns
 						//moosecord=shared.addcord(moosecord,{x:4,y:4})
 						console.log('moosecord',moosecord.x,moosecord.y)

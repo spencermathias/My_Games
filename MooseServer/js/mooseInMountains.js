@@ -80,7 +80,9 @@ $('#myText')[0].addEventListener('keyup',function(event){
 			$('#response').text(yesno.solveStr(message.data));
 			//$('#chatlog').scroll();
 			$('#chatlog').animate({scrollTop: 1000000})
+			dropDownList.push($('#myText').val())
 			$('#myText').val('');
+			dropDownListIndex=0
   		}else{
 	  		if(yesno.strContain(message.data,'{')){
                 let first=message.data.indexOf('{')
@@ -110,6 +112,22 @@ $('#myText')[0].addEventListener('keyup',function(event){
             	$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); /*appending the data on the page using Jquery */
             }
 	  	}
+	}
+	if(event.keyCode===38){
+		if(dropDownListIndex==1 && $('#myText').val()!="" && $('#myText').val()!=dropDownList[dropDownList.length-1]){
+			dropDownList.push($('#myText').val())
+		}
+		if (dropDownListIndex<dropDownList.length){
+			dropDownListIndex++
+			$('#myText').val(dropDownList[dropDownList.length-dropDownListIndex])
+		}else{$('#myText').val(dropDownList[0])}
+	}
+	if(event.keyCode===40){
+
+		if (dropDownListIndex>1){
+			dropDownListIndex--
+			$('#myText').val(dropDownList[dropDownList.length-dropDownListIndex])
+		}else{$('#myText').val(dropDownList[dropDownList.length])}
 	}
 	//socket.send(JSON.stringify(data)); 
 	return false;
@@ -155,7 +173,9 @@ var newbox = undefined;
 var newbox1 = undefined;
 var newbox2 = undefined;
 var drawState = 2;
-
+var dropDownList=[]
+var dropDownListIndex=1
+dropDownList.push('mooseReset={"x":4,"y":4}')
 
 var canvas = document.getElementById("gameBoard");
 var ctx = canvas.getContext("2d");

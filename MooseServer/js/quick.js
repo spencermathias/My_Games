@@ -167,7 +167,14 @@ yesno={
         let obj=[]
         for (i=0;i<2;i++){
             if(this.strContain(eq,'moose')){obj[i]=this.moosecord(this.moose);eq=eq.replace('moose','')}else
+            if(this.strContain(eq,"'N'")){obj[i]={x:4,y:-1};eq=eq.replace("'N'",'')}else
+            if(this.strContain(eq,"'North'")){obj[i]={y:-1};eq=eq.replace("'North'",'')}else
             if(this.strContain(eq,"'E'")){obj[i]={x:9,y:4};eq=eq.replace("'E'",'')}else
+            if(this.strContain(eq,"'East'")){obj[i]={x:9};eq=eq.replace("'E'",'ast')}else
+            if(this.strContain(eq,"'S'")){obj[i]={x:4,y:9};eq=eq.replace("'S'",'')}else
+            if(this.strContain(eq,"'South'")){obj[i]={y:9};eq=eq.replace("'South'",'')}else
+            if(this.strContain(eq,"'W'")){obj[i]={x:-1,y:4};eq=eq.replace("'W'",'')}else
+            if(this.strContain(eq,"'West'")){obj[i]={x:-1,};eq=eq.replace("'West'",'')}else   
             if(this.strContain(eq,'{')){
                 let first=eq.indexOf('{')
                 let last=eq.indexOf('}')+1
