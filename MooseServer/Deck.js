@@ -14,6 +14,10 @@ class Deck{
 		this.totalCards = constants.shift() //first number is the total number of cards
 			
 		this.divConstants = constants //CONST
+		this.pile =[]
+		for( let i = 0;i<this.totalCards;i++){this.pile.push(i);}
+		this.shuffle(5)
+	
 	}
 	
 	getProperties(cardNum){
@@ -34,6 +38,35 @@ class Deck{
 		}
 		
 		return cardProp
+	}
+
+	deal(n=1){
+		let hand=[]
+		while(n){
+			hand.push(this.pile.pop());n--;
+		}
+		return hand
+	}
+
+	returncard(cardID){
+		let index = Math.floor(Math.random()*this.pile.length)
+		this.pile.spice(index,0,cardID)
+	}
+
+	shuffle(n=1){
+		while(n){
+			let m = this.pile.length, i;
+			while(m){
+				i = Math.floor(Math.random() * m--);
+				[this.pile[m],this.pile[i]]=[this.pile[i],this.pile[m]]
+			}
+			n--
+		}
+	}
+
+	//overload when creating deck
+	drawCard(ctx, cardNum){
+		console.warn('draw not defined');
 	}
 }
 
