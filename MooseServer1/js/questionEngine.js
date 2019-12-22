@@ -13,17 +13,29 @@ Qengine={
     },
     moveMoose:function(chosen,playerID){
         this.moose.path+=chosen.path
-        this.players[playerID].lastPlayed=chosen
+        this.players[playerID].lastPlayed.ID=chosen.ID
+        //console.log(16,'chosen',chosen.path  )
+        this.players[playerID].lastPlayed.path=chosen.path
+        this.players[playerID].lastPlayed.color=chosen.color
         this.cardsPlayed[chosen.ID]={color:chosen.color,path:chosen.path}
         this.moose.cord={x:this.moosecord(this.moose.path).x,y:this.moosecord(this.moose.path).y}
     },
     emitplayers:function(emitchoice=false){
         if(emitchoice){return this.players}else{
-            cleanplayers=this.players
+            let cleanplayers=this.players
+            console.log(16,'cleanplayers before',cleanplayers)
             cleanplayers.forEach(function(player){
-                player.lastPlayed=player.lastPlayed.ID
-                player.tiles=[]
+                if(player.lastPlayed){
+                    player.lastPlayed={
+                        ID:player.lastPlayed.ID,
+                        color:undefined,
+                        path:undefined
+                    }
+                }
+                //player.tiles=[]
+                console.log('player',player)
             })
+            console.log(16,'cleanplayers after',cleanplayers)
             return cleanplayers
         }
     },
@@ -70,18 +82,23 @@ Qengine={
     }
     return(dmax)
     },
-    addcord:function (a,b,neg=1){
+    addcord:function (a,b,neg=1,wrap=false){
         let c={}
         let a1=[],b1=[]
         if(a==0){a1.x=0;a1.y=0}else{a1=a}
         if(b==0){b1.x=0;b1.y=0}else{b1=b}
         c.x=a1.x+neg*b1.x
         c.y=a1.y+neg*b1.y
+        if(wrap){
+            c.x=(c.x+this.boardCol)%this.boardCol 
+            c.y=(c.y+this.boardRow)%this.boardRow
+        }
         return c
     },
     validMove:function(player,newLocation,move=false){
         let Pcord=this.players[player].cord
-        if(newLocation.x>-1&&newLocation.y>-1&&newLocation.x<=this.boardCol&&newLocation.y<=this.boardRow&&(Pcord.x!=newLocation.x||Pcord.y!=newLocation.y)){
+        if(!this.onplayer(newLocation))
+        if(newLocation.x>-1&&newLocation.y>-1&&newLocation.x<this.boardCol&&newLocation.y<this.boardRow&&(Pcord.x!=newLocation.x||Pcord.y!=newLocation.y)){
             let dist=this.distance(Pcord,newLocation)
             if(dist<this.maxMove+1){
                 if(move){
@@ -109,6 +126,50 @@ Qengine={
                 }else{return false}
             }else{return false}
         }else{return false}
+    },
+    onplayer:function(newLocation=false){
+        if(typeof(newLocation)==='object'){
+            let onlocation=false
+            for(let i=0;i<this.players.length;i++){
+                if(newLocation.x==this.players[i].cord.x&&newLocation.y==this.players[i].cord.y){
+                    onlocation=true
+                    break
+                }
+            }
+            return onlocation
+        }else{
+            let locations=[]
+            for(let i=0;i<this.players.length;i++){
+                locations.push(this.players[i].cord)
+            }
+            if(typeof(newLocation)=='number'){
+                let last=locations.splice(newLocation,1)
+                locations.concat(last)
+            }
+            return locations
+        }
+    },
+    moveOptions:function(player){
+        let moveList=[]
+        let startpos=this.players[player].cord
+        for(let i=-this.maxMove;i<this.maxMove+1;i++){
+            console.log('i',i)
+            for(let j=0;j<this.maxMove-Math.abs(i)+1;j++){
+                //console.log('j',j)
+                //console.log('start',startpos)
+                //console.log('check',this.addcord(startpos,{x:i,y:j},1,true))
+                if(this.validMove(player,this.addcord(startpos,{x:i,y:j},1,true))){
+                    moveList.push(this.addcord(startpos,{x:i,y:j},1,true))
+                }
+                if(j!=0){
+                    //console.log('check',this.addcord(startpos,{x:i,y:-1*j},1,true))
+                    if(this.validMove(player,this.addcord(startpos,{x:i,y:-1*j},1,true))){
+                        moveList.push(this.addcord(startpos,{x:i,y:-1*j},1,true))
+                    }
+                }
+            }
+        }
+        return moveList
     },
     distanceParse:function(text){
          let eq=text+''
