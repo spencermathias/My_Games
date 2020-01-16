@@ -64,10 +64,10 @@ $('#myText')[0].addEventListener('keyup',function(event){
   			let answer=(Qengine.solveStr(message))
   			if(answer=='0'||answer=='1'){
   				if(answer==true){
-	  				$('#chatlog').append('<div style="color:#009900">unofficial test of code </div>')
+	  				$('#chatlog').append('<div style="color:#990000">unofficial test of code </div>')
 	  				$('#chatlog').append('<div style="color:#990000">result true</div>'); //appending the data on the page using Jquery 
 	  			}else{
-	  				$('#chatlog').append('<div style="color:#009900">unofficial test of code</div>');
+	  				$('#chatlog').append('<div style="color:#990000">unofficial test of code</div>');
 	  				$('#chatlog').append('<div style="color:#990000">result false</div>');
 	  			}
 	  		}else{
@@ -88,12 +88,12 @@ $('#myText')[0].addEventListener('keyup',function(event){
                 	let error = 'did not include"}"'
                 	$('#chatlog').append('<div style="color:#ff0000">'+error+'</div>'); //appending the data on the page using Jquery 
                 }else{
-                	let testcord=''
+                	let testcord={}
                 	try{
                 		testcord=JSON.parse(message.substr(first,last))
                 		Qengine.moose.cord=testcord
-                		testcord.x-=4
-                		testcord.y-=4
+                		//Qengine.//testcord.x-=4
+                		//testcord.y-=4
                 		let tested='moose='+message.substr(first,last)
                 		$('#chatlog').append('<div style="color:#009900">'+tested+'</div>'); //appending the data on the page using Jquery 
                 		moosecordget=false
@@ -331,13 +331,15 @@ class doubleButton{
 		this.arrowb = '';
 		this.arrowg = '';
 		this.chosen={ID:tileData, path:undefined, color:undefined}
+		this.visible=true
 
 		this.tileData = curentDeck.getProperties(tileData);
 		this.tileData.ID=tileData
 		//this.chosen={path:undefined,color:undefined}
-
-		this.arrowb=cord2dpath(Qengine.addcord(this.tileData.mean,this.tileData.dif))
-		this.arrowg=cord2dpath(Qengine.addcord(this.tileData.mean,this.tileData.dif,-1))
+		this.arrowbv=Qengine.addcord(this.tileData.mean,this.tileData.dif)
+		this.arrowgv=Qengine.addcord(this.tileData.mean,this.tileData.dif,-1)
+		this.arrowb=cord2dpath(this.arrowbv)
+		this.arrowg=cord2dpath(this.arrowgv)
 		
 		if (cord2dpath(this.arrowb)!=''){
 			this.arrowb=cord2dpath(this.tileData.mean)+cord2dpath(this.tileData.dif)
@@ -361,9 +363,11 @@ class doubleButton{
 		if(direction.path!=this.chosen.path){
 			if(this.chosen.path!=undefined){
 				if(this.chosen.color=='Blue'){
-					Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowb,-1)
+					//Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowbv,-1)
+					Qengine.unMoveMoose(this.chosen,this.arrowbv)
 				}else{
-					Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowg,-1)
+					//Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowgv,-1)
+					Qengine.unMoveMoose(this.chosen,this.arrowgv)
 				}
 			}
 			this.chosen.path=direction.path
@@ -371,9 +375,11 @@ class doubleButton{
 			Qengine.moveMoose(this.chosen,this.playerID)
 		}else{
 			if(this.chosen.color=='Blue'){
-				Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowb,-1)
+				Qengine.unMoveMoose(this.chosen,this.arrowbv)
+				//Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowb,-1)
 			}else{
-				Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowg,-1)
+				Qengine.unMoveMoose(this.chosen,this.arrowbv)
+				//Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowg,-1)
 			}
 			this.chosen.path=undefined
 		}
@@ -629,8 +635,8 @@ class Board {
 	}
 	click(name){
 		console.log(name)
-		if(highlightClickable){
-			if(selected.type=='distance'){
+		if(this.highlightClickable){
+			if(selected.type=='dist'){
 				socket.emit("recieveDistanceQuestion",name)
 			}
 		}
@@ -683,20 +689,31 @@ socket.on('connect', function(){
 	localStorage.id = socket.id;
 });
 function updateFromServer(recievedBoardState){
-	Qengine.players=recievedBoardState
-	for(let i=0; i<Qengine.players.length; i++){
-		if(Qengine.players[i].lastPlayed!=-1){
-			let tile=new doubleButton(Qengine.players[i].lastPlayed.ID, (canvas.width/2) + (tileWidth*2 + 20) * (i-(Qengine.players.length-1)/2) , (tileHeight + 20), tileWidth*2, tileHeight, cards,i)
-			if(i==myUserlistIndex){
-				tile.click=function(){
-					console.log('this tile is locked because it is the one you played')
-				}
-			}
-			console.log(tile)
-			tile.chosen=Qengine.players[i].lastPlayed
-			theirTiles.push(tile)
-		}
+	console.log('recievedBoardState',recievedBoardState)
+	console.log(recievedBoardState.lastPlayed)
+	let i=recievedBoardState.boardID
+	let holdLast={ID:-1}
+	if(Qengine.players[i]!=undefined){
+		if(Qengine.players[i].lastPlayed.ID==recievedBoardState.lastPlayed.ID){
+			holdLast=Qengine.players[i].lastPlayed
+			Qengine.players[i]=recievedBoardState
+			Qengine.players[i].lastPlayed=holdLast
+		}else{Qengine.players[i]=recievedBoardState}
+	}else{
+		Qengine.players[i]=recievedBoardState
 	}
+	if(Qengine.players[i].lastPlayed.ID!=-1){
+		let tile=new doubleButton(Qengine.players[i].lastPlayed.ID, (canvas.width/2) + (tileWidth*2 + 20) * (i-(Qengine.players.length-1)/2) , (tileHeight + 20), tileWidth*2, tileHeight, cards,i)
+		if(i==myUserlistIndex){
+			tile.click=function(){
+				console.log('this tile is locked because it is the one you played')
+			}
+		}
+		console.log(tile)
+		tile.chosen=Qengine.players[i].lastPlayed
+		theirTiles[i]=tile
+	}else{theirTiles[i]={chosen:undefined}}
+
 	//theirTiles.push()
 }
 function cord2shape(cord){
@@ -764,9 +781,9 @@ socket.on("message",function(message){
 		using socket.on("message") , one cna listen for the ,message event and associate a callback to 
 		be executed . The Callback function gets the dat sent from the server 
 	*/
-	//console.log("Message from the server arrived")
+	console.log("Message from the server arrived")
 	message = JSON.parse(message);
-	//console.log(message); /*converting the data into JS object */
+	console.log(message.data); /*converting the data into JS object */
 	
 	$('#chatlog').append('<div style="color:'+message.color+'">'+message.data+'</div>'); /*appending the data on the page using Jquery */
 	$('#response').text(message.data);
@@ -777,8 +794,7 @@ socket.on("message",function(message){
 socket.on('userList',function(data){
 	var userListString = '';
 	userList = data;
-	console.log('yesno.cardsPlayed=userList')
-	console.log('yesno.cards=cards')
+	console.log('userList',userList)
 	for( var i = 0; i < data.length; i++ ){
 		var header = 'div id="userListDiv'+ i + '"';
 		var click = 'onclick="changeName(' + "'" + data[i].id + "'" + ')"';
@@ -806,9 +822,34 @@ socket.on('userList',function(data){
 		
 		userListString = userListString + '<' + header + click + color + '>' + string + ender;
 		//console.log( "player", data[i].userName, "myTurn", myTurn, "id", data[i].id, socket.id, "color", data[i].color, yourTurnColor);
+		if(data[i].engineData!=undefined){
+			console.log(data[i].engineData.lastPlayed)
+			updateFromServer(data[i].engineData)
+			//add name card for player if they have Qengine data
+			let namecard={
+				x:(canvas.width/2) + (tileWidth*2 + 20) * (i-(data.length-1)/2),
+				y:20,
+				color:userList[i].engineData.color,
+				name:userList[i].userName
+			}
+
+			theirNames.push(namecard)
+		}
+		// if(Qengine.players[data[i].boardID]){
+		// 	let tempLastplayed=Qengine.players[data[i].boardID].lastPlayed
+		// 	Qengine.players[data[i].boardID]=data[i].engineData
+		// 	if(tempLastplayed.ID==Qengine.players[data[i].boardID].lastPlayed.ID){
+		// 		Qengine.players[data[i].boardID].lastPlayed=tempLastplayed
+		// 	}
+		// }else if(data[i].engineData){
+		// 	Qengine.players[data[i].engineData.ID]=data[i].engineData
+		// }else{
+		// 	console.log('no data in')
+		// }
 	}
 	document.getElementById('userlist').innerHTML = userListString;
 	console.table(data);
+
 });
 
 socket.on('showBoard',function(data){
@@ -818,12 +859,13 @@ socket.on('showBoard',function(data){
 	resizeCanvas();
 });
 
-socket.on('tiles', function(tiles){
-	serverTiles = tiles;
+socket.on('tiles', function(personalData){
+	console.log('personalData',personalData)
+	serverTiles = personalData.tiles;
 	myTiles = []; //delete my tiles
 	for(var i = 0; i < serverTiles.length; i++){
 		//console.log(cards)
-		var tile = new doubleButton(tiles[i], (canvas.width/2) + (tileWidth*2 + 20) * (i-(tiles.length-1)/2) , canvas.height - (tileHeight + 20), tileWidth*2, tileHeight, cards,myUserlistIndex);
+		var tile = new doubleButton(serverTiles[i], (canvas.width/2) + (tileWidth*2 + 20) * (i-(serverTiles.length-1)/2) , canvas.height - (tileHeight + 20), tileWidth*2, tileHeight, cards,myUserlistIndex);
 		tile.click=function(direction){
 			if(myLastChoice==undefined){
 				if(direction.color=='Blue'){
@@ -845,9 +887,13 @@ socket.on('tiles', function(tiles){
 		shapes[0].concat(tile.subButtons);//1st layer
 		myTiles.push(tile);
 	}
-	
 	//resizeDrawings();
 	console.log('tiles updated: ', myTiles);
+	if(Qengine.players[myUserlistIndex]){
+		Qengine.players[myUserlistIndex].lastPlayed.path=personalData.chosen.path
+		Qengine.players[myUserlistIndex].lastPlayed.color=personalData.chosen.color
+	}
+
 });
 socket.on('currentTurn',function(currentTurnR){
 	console.log('recieved',currentTurnR)
@@ -883,9 +929,9 @@ socket.on('currentTurn',function(currentTurnR){
 	currentTurn=currentTurnR
 })
 
-socket.on('boardState', function(recievedBoardState){
-	updateFromServer(recievedBoardState);
-});
+// socket.on('boardState', function(recievedBoardState){
+// 	updateFromServer(recievedBoardState);
+// });
 
 
 
@@ -955,7 +1001,11 @@ function draw(){
 		shapes[0] = shapes[0].concat( myTiles[i].subButtons );//1st layer
 	}
 	for(var i = 0; i < theirTiles.length; i++){
-		shapes[0] = shapes[0].concat( theirTiles[i].subButtons );//1st layer
+		if (theirTiles[i].visible){
+			if(theirTiles[i]){
+				shapes[0] = shapes[0].concat( theirTiles[i].subButtons );//1st layer
+			}
+		}
 	}
 	board.draw(ctx);
 	
@@ -997,6 +1047,7 @@ function draw(){
 
 	if (theirNames.length>0){
 		for(let i=0;i<theirNames.length;i++){
+			ctx.fillStyle=theirNames[i].color
 			ctx.fillText(theirNames[i].name,theirNames[i].x,theirNames[i].y)
 		}
 	}

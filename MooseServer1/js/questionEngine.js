@@ -11,6 +11,55 @@ Qengine={
         this.players=[]
         this.maxMove=2
     },
+    // defaultPlayerData:function(){
+    //     return{
+    //         boardID: playerID,
+    //         userName: this.players[playerID].userName,
+    //         color: this.players[playerID].color,
+    //         cord: {x:undefined,y:undefined}
+    //         lastPlayed:{ID:undefined,color:undefined,path:undefined}
+    //     }
+    // },
+    mooseReset:function(testCord){
+        this.moose.cord=testCord
+        let testpath=''
+        if(testCord.x>4){
+            for(i=testCord.x;i>4;i--){
+                testpath+='R'
+            }
+        }else if(testCord.x<4){
+            for(i=testCord.x;i<4;i++){
+                testpath+='L'
+            }
+        }
+        if(testCord.y>4){
+            for(i=testCord.y;i>4;i--){
+                testpath+='D'
+            }
+        }else if(testCord.y<4){
+            for(i=testCord.y;i<4;i++){
+                testpath+='U'
+            }
+        }
+        this.moose.path=testpath
+    },
+    getEngineSendData:function(playerID){
+        //console.log("getEngineSendData-lastPlayed", this.players[playerID].lastPlayed)
+        return{
+            boardID: playerID,
+            userName: this.players[playerID].userName,
+            color: this.players[playerID].color,
+            cord: this.players[playerID].cord,
+            lastPlayed:{ID:this.players[playerID].lastPlayed.ID}
+        };
+    },
+    unMoveMoose:function(chosen,vector) {
+        let index = this.moose.path.lastIndexOf(chosen.path);
+        if (index >= 0) {
+            this.moose.path=this.moose.path.substring(0, index) + this.moose.path.substring(index + chosen.path.length);
+        }
+        this.moose.cord=this.addcord(this.moose.cord,vector,-1)
+    },
     moveMoose:function(chosen,playerID){
         this.moose.path+=chosen.path
         this.players[playerID].lastPlayed.ID=chosen.ID
@@ -19,25 +68,6 @@ Qengine={
         this.players[playerID].lastPlayed.color=chosen.color
         this.cardsPlayed[chosen.ID]={color:chosen.color,path:chosen.path}
         this.moose.cord={x:this.moosecord(this.moose.path).x,y:this.moosecord(this.moose.path).y}
-    },
-    emitplayers:function(emitchoice=false){
-        if(emitchoice){return this.players}else{
-            let cleanplayers=this.players
-            console.log(16,'cleanplayers before',cleanplayers)
-            cleanplayers.forEach(function(player){
-                if(player.lastPlayed){
-                    player.lastPlayed={
-                        ID:player.lastPlayed.ID,
-                        color:undefined,
-                        path:undefined
-                    }
-                }
-                //player.tiles=[]
-                console.log('player',player)
-            })
-            console.log(16,'cleanplayers after',cleanplayers)
-            return cleanplayers
-        }
     },
     moosecord:function(moosepath){
         let type= typeof moosepath
@@ -227,7 +257,7 @@ Qengine={
                 text=text.replace(this.players[i].userName,'')
                 if(this.strContain(text,'blue')||this.strContain(text,'Blue')){
                     console.log('chose blue')
-                    chosen=(Blue==this.players[i].lastPlayed.color)
+                    chosen=('Blue'==this.players[i].lastPlayed.color)
                 }else if (this.strContain(text,'green')||this.strContain(text,'Green')) {
                     let lastPathCord={}
                     console.log('chose green')
@@ -365,7 +395,7 @@ Qengine={
 try {
     module.exports = Qengine
 }catch (err){
-    console.log("you must be client side!quick"); 
+    console.log("you must be this.players[playerID] side!quick"); 
 }
 //Qengine.players[0]={userName:'spencer',cord:{x:0,y:4}}
 //Qengine.players[1]={userName:'incog'}

@@ -16,6 +16,7 @@ var server = http.createServer(app).listen(socket,"0.0.0.0",511,function(){conso
 io = io.listen(server);
 /*initializing the websockets communication , server instance has to be sent as the argument */
 
+var numberOfTilesForHand=4
 var minPlayers = 2;
 var maxPlayers = 20;
 var gameMaxMove=2
@@ -96,7 +97,7 @@ io.sockets.on("connection", function(socket) {
         socket.userData.color = spectatorColor;
         updateBoard(socket, notReadyTitleColor, true);
 		updateUsers(socket);
-		socket.emit("allTiles", allTiles);
+		//socket.emit("allTiles", allTiles);
 		//socket.emit('boardState', boardState);
     }
 
@@ -203,11 +204,11 @@ io.sockets.on("connection", function(socket) {
 				let theTiles=socket.userData.tiles
 				theTiles.splice(theTiles.findIndex(ID => ID === tile.ID),1)
 				socket.userData.tiles=theTiles.concat(cards.deal())
-				socket.emit("tiles", socket.userData.tiles)
+				updateUsers()
+				sendPersonalData()
 				console.log(__line,'these are the tiles played so far'+playedCards)
-				io.sockets.emit('playedTiles',playedCards)
 				checkmoose()
-				sendBoardState()
+				//sendBoardState()
 			}
 		}
 	});
@@ -247,7 +248,7 @@ io.sockets.on("connection", function(socket) {
 			message(io.sockets,socket.userData.userName+' wins')
 			gameEnd()
 		}else{
-			message(io.sockets,'moose is located: '+Qengine.moose.cord)
+			message(io.sockets,'moose is located: x'+Qengine.moose.cord.x+' y'+Qengine.moose.cord.y)
 			message(io.sockets,socket.userData.userName+' looses')
 			gameEnd()
 		}
@@ -320,6 +321,7 @@ function checkmoose() {
             //	})
             //firstPlayed=-1
             turnOrder.push(-1)
+            AllPlayedCards.push(playedCards)
             playedCards=Array(players.length).fill(-1)
             gameStatus = gameMode.MOVEORQUESTION//moveORquestion();
             TurnCount=-1
@@ -340,15 +342,16 @@ function gameStart() {
 	allClients.forEach(function(client){ 
 		if(client.userData.ready){
 			client.userData.ID=playerCount++
-			//client.userData.color = colorlist[client.userData.ID];
-			//client.userData.cards = [];
+			//deal cards
+			client.userData.tiles=cards.deal(numberOfTilesForHand)
+			
 			players.push(client);
 			Qengine.players[client.userData.ID]={
 				userName:client.userData.userName,
 				color:colorlist[client.userData.ID],
-				cards:[],
+				//cards:[],
 				cord:{x:undefined,y:undefined},
-				lastPlayed:{ID:undefined}
+				lastPlayed:{ID:-1,color:undefined,path:undefined}
 			}
 		} else {
 			client.userData.color = spectatorColor;
@@ -357,25 +360,36 @@ function gameStart() {
 	setStartPosition();
 	updateBoard(io.sockets, readyTitleColor, true); //changes screen from lobby to board
 	currentTurn = -2
-	
+	//io.sockets.emit('boardState', Qengine.players);
 	
     playedCards = Array(players.length).fill(-1)
 
-	//deal cards
-	//console.log(Qengine.players)
-	players.forEach(function(player) {
-		player.userData.tiles=cards.deal(shared.numberOfTilesForHand)
-		player.emit("tiles", player.userData.tiles)
+	
+	
+	sendPersonalData()
 		//Qengine.players.push(player.userData)
 		//console.log(__line, "player", player.userData.name,player.userData.tiles);
-	});
 	nextTurn()
 
 
 	//updateTurnColor();
 	//wait for turn plays
 }
-
+function sendPersonalData(){
+	players.forEach(function(player) {
+		
+		let personalData={
+			tiles:player.userData.tiles,
+			chosen:{path:undefined,color:undefined}
+		}
+		if(Qengine.players[player.userData.ID].lastPlayed.ID!=-1){
+			personalData.chosen.path=Qengine.players[player.userData.ID].lastPlayed.path
+			personalData.chosen.color=Qengine.players[player.userData.ID].lastPlayed.color
+		}
+		console.log(__line,personalData)
+		player.emit("tiles", personalData)
+	})
+}
 function setStartPosition(){ //set all positions on the board to -1 to indicate no tile
 	//TODO: place starting pawns
 	let angle = (2*Math.PI)/(Qengine.players.length)
@@ -389,7 +403,7 @@ function setStartPosition(){ //set all positions on the board to -1 to indicate 
 		//console.log('xplace',xplace,'yplace',yplace,'iangle',(i*angle))
 		Qengine.players[i].cord={x:xplace,y:yplace}
 	}
-	sendBoardState(false);//?????
+	//sendBoardState(false);//?????
 }
 
 function determineNextTurnState(maxMove,playerID){
@@ -409,7 +423,7 @@ function nextTurn(){
 		TurnCount +=1 
 		currentTurn=turnOrder[TurnCount]
 		if(currentTurn==-1||currentTurn===undefined){
-			sendBoardState()
+			//sendBoardState()
 			console.log("movemose")	
 			currentTurn=-1
 			io.sockets.emit('currentTurn',currentTurn)
@@ -419,8 +433,10 @@ function nextTurn(){
 			partTurn=2
 			for(let i=0;i<players.length;i++){
 				players[i].userData.yourTurn=""
+				Qengine.players[i].lastPlayed.ID=-1
 			}
 			updateUsers()
+			sendPersonalData()
 		}else{
 			//currentTurn = (currentTurn + 1) % players.length;
 			for(let i=0;i<players.length;i++){
@@ -430,9 +446,9 @@ function nextTurn(){
 			players[currentTurn].userData.yourTurn='<'
 			message(players[currentTurn], "It is your turn!", gameColor);
 			message(io.sockets,"It is " + players[currentTurn].userData.userName + "'s turn!", gameColor)
-			sendBoardState()
+			//sendBoardState()
 			updateUsers()
-			console.log(__line,'update')
+			console.log(__line,'update after someone puts tile')
 			io.sockets.emit('currentTurn',0)
 			console.log(__line,'currentTurn, always 0')
 			//players[currentTurn].userData.playedCard=false
@@ -463,17 +479,19 @@ function updateUsers(target = io.sockets){
 		});
 	} else {
 		players.forEach(function(client){
-			//Qengine.players[client.userData.]
-			userList.push(getUserSendData(client));
+			let data=getUserSendDataWithEngine(client)
+			console.log(__line,'engineData',data.engineData)
+			userList.push(data);
 		});
 		spectators.forEach(function(client){
-			userList.push(getUserSendData(client));
+			//userList.push(getUserSendDataWithEngine(client));
 		});
 	}
     console.log(__line,"----------------Done Sending List----------------");
 	
+	//console.log('userList[0]',userList[0].engineData)
+	//console.log('userList[1]',userList[1].engineData)
 	io.sockets.emit('userList', userList);
-	//console.log('Qengine.cardsPlayed=userList')
 }
 
 function getUserSendData(client){
@@ -484,9 +502,20 @@ function getUserSendData(client){
 		userName: client.userData.userName,
 		color: client.userData.color,
 		yourTurn: client.userData.yourTurn,
+		engineData:undefined
 	};
 }
-
+function getUserSendDataWithEngine(client){
+	console.log(__line,"userName:", client.userData.userName, " |ready:", client.userData.ready, "|status:", client.userData.color, "|score:", client.userData.score);
+	return{
+		id: client.id,
+		boardID: client.userData.ID,
+		userName: client.userData.userName,
+		color: client.userData.color,
+		yourTurn: client.userData.yourTurn,
+		engineData:Qengine.getEngineSendData(client.userData.ID)
+	};
+}
 function updateBoard(socketSend, titleColor, showBoard) { //switches between title and game screen
     var showBoardMessage = {
         titleColor: titleColor,
@@ -503,16 +532,8 @@ function updateBoard(socketSend, titleColor, showBoard) { //switches between tit
 
 
 function sendBoardState(emitChoice){
-	let cleanPlayers=Qengine.emitplayers()
-	let filledPlayers=Qengine.emitplayers(true)
-	console.log(__line,'filledPlayers',filledPlayers)
-	for(playernumber in players){
-		let individualPlayer=cleanPlayers
-		individualPlayer[playernumber]=filledPlayers[playernumber]
-		console.log(__line,'player',playernumber)
-		console.log(__line,'individualPlayer',individualPlayer)
-		players[playernumber].emit("boardState",individualPlayer)
-	}
+	io.sockets.emit("boardState", Qengine.players);
+	
 }
 
 
