@@ -287,8 +287,11 @@ io.sockets.on("connection", function(socket) {
 		}else{
 			message(io.sockets,'error',gameColor)
 		}
-		partTurn-=1
-		if(partTurn<1){nextTurn()}
+		Qengine.maxMove-=1
+		if(Qengine.maxMove<1){nextTurn()}else{
+			socket.emit('currentTurn',Qengine.maxMove)
+			updateUsers()
+		}
 	});
 });
 
@@ -410,6 +413,8 @@ function determineNextTurnState(maxMove,playerID){
 	console.log(__line,"maxMove",maxMove)
 	if(maxMove>0){
 		console.log('decide to allow more turn')
+		io.sockets.emit('currentTurn',maxMove)
+		updateUsers()
 	}else{
 		console.log(__line,'send to nextTurn()')
 		Qengine.maxMove=gameMaxMove

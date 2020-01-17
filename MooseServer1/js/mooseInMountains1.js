@@ -378,7 +378,7 @@ class doubleButton{
 				Qengine.unMoveMoose(this.chosen,this.arrowbv)
 				//Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowb,-1)
 			}else{
-				Qengine.unMoveMoose(this.chosen,this.arrowbv)
+				Qengine.unMoveMoose(this.chosen,this.arrowgv)
 				//Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowg,-1)
 			}
 			this.chosen.path=undefined
@@ -898,6 +898,8 @@ socket.on('tiles', function(personalData){
 socket.on('currentTurn',function(currentTurnR){
 	console.log('recieved',currentTurnR)
 	console.log('myTurn',myTurn)
+	selected={}
+	myOptions=[]
 	if(currentTurnR==-1){
 		for(i=0; i<myTiles.length; i++){
 			myLastChoice=undefined
@@ -916,6 +918,7 @@ socket.on('currentTurn',function(currentTurnR){
 			selectButtons['cancel'].visible=false
 			if(currentTurnR!=0){
 				selectButtons['dist'].visible=false
+				Qengine.maxMove=currentTurnR
 			}
 		}else{
 			for(i in selectButtons){
