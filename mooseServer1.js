@@ -31,7 +31,6 @@ var boardRows = 9;
 var boardColumns = 9;
 var boardState = [];
 
-//var tiles = [];
 var allTiles = [];
 
 var gameMode = {
@@ -74,7 +73,6 @@ var TurnCount=-1
 console.log("Server Started!");
 
 function defaultUserData(){
-	//nextUserID++
 	return {
 		userName: "Unknown",
 		tiles: [],
@@ -97,8 +95,6 @@ io.sockets.on("connection", function(socket) {
         socket.userData.color = spectatorColor;
         updateBoard(socket, notReadyTitleColor, true);
 		updateUsers(socket);
-		//socket.emit("allTiles", allTiles);
-		//socket.emit('boardState', boardState);
     }
 
 	message(socket, "Connection established!", serverColor)
@@ -168,8 +164,6 @@ io.sockets.on("connection", function(socket) {
 
     socket.on("userName", function(userName) {
         socket.userData.userName = userName;
-        
-        //socket.userData.ready = false;
         console.log(__line,"added new user: " + socket.userData.userName);
 		message(io.sockets, "" + socket.userData.userName + " has joined!", serverColor);
         updateUsers();
@@ -208,7 +202,6 @@ io.sockets.on("connection", function(socket) {
 				sendPersonalData()
 				console.log(__line,'these are the tiles played so far'+playedCards)
 				checkmoose()
-				//sendBoardState()
 			}
 		}
 	});
@@ -221,7 +214,6 @@ io.sockets.on("connection", function(socket) {
 			if(socket.userData.ID==currentTurn){
 				console.log(__line,"recieved move")
 				if(Qengine.validMove(currentTurn,movement)){
-					//console.log(__line,'Qengine.maxMove',Qengine.maxMove)
 					let distancemoved=Qengine.validMove(currentTurn,movement,true)
 					console.log(__line,'validMove')
 					Qengine.maxMove=Qengine.maxMove-distancemoved
@@ -240,7 +232,6 @@ io.sockets.on("connection", function(socket) {
 	
 	
 	socket.on("foundMoose", function(){
-		//message(socket,moosecord.y, gameErrorColor)
 		console.log('found moose')
 		let current=socket.userData.ID
 		if(Qengine.distance(Qengine.moose.cord,Qengine.players[current].cord)==0){
@@ -277,7 +268,6 @@ io.sockets.on("connection", function(socket) {
 	});
 	socket.on('yesnoquestion',function(text){
 		message(io.sockets,text, gameColor)
-		//message(io.sockets,'true',gameColor)
 		let answer=Qengine.solveStr(text)
 		console.log(__line,'yesno answer',answer)
 		if(answer=='0'||answer=='1'){
@@ -311,18 +301,8 @@ function checkStart() {
 }
 function checkmoose() {	
     if( gameStatus === gameMode.PLAYTILE) {
-        /*let readyCount = 0;
-        allClients.forEach(function(client) {
-            if( client.userData.playedCard ) {
-                readyCount++;
-            }
-        });*/
         console.log(__line,'turn order length is '+turnOrder.length)
         if(turnOrder.length == players.length) {
-            //allClients.forEach(function(client) {
-            	//client.userData.playedCard = false 
-            //	})
-            //firstPlayed=-1
             turnOrder.push(-1)
             AllPlayedCards.push(playedCards)
             playedCards=Array(players.length).fill(-1)
@@ -352,7 +332,6 @@ function gameStart() {
 			Qengine.players[client.userData.ID]={
 				userName:client.userData.userName,
 				color:colorlist[client.userData.ID],
-				//cards:[],
 				cord:{x:undefined,y:undefined},
 				lastPlayed:{ID:-1,color:undefined,path:undefined}
 			}
@@ -363,19 +342,9 @@ function gameStart() {
 	setStartPosition();
 	updateBoard(io.sockets, readyTitleColor, true); //changes screen from lobby to board
 	currentTurn = -2
-	//io.sockets.emit('boardState', Qengine.players);
-	
     playedCards = Array(players.length).fill(-1)
-
-	
-	
 	sendPersonalData()
-		//Qengine.players.push(player.userData)
-		//console.log(__line, "player", player.userData.name,player.userData.tiles);
 	nextTurn()
-
-
-	//updateTurnColor();
 	//wait for turn plays
 }
 function sendPersonalData(){
@@ -394,19 +363,14 @@ function sendPersonalData(){
 	})
 }
 function setStartPosition(){ //set all positions on the board to -1 to indicate no tile
-	//TODO: place starting pawns
+	//place starting pawns
 	let angle = (2*Math.PI)/(Qengine.players.length)
 	console.log(Qengine.players)
 	for(i = 0; i<Qengine.players.length; i++){
-		//console.log('start player')
-		//console.log(Qengine.players[i])
-		//console.log('end player')
 		let yplace = Math.round(((boardRows-1)/2)*Math.cos(i*angle)+(boardRows-1)/2)
 		let xplace = Math.round(((boardRows-1)/2)*Math.sin(i*angle)+(boardRows-1)/2)
-		//console.log('xplace',xplace,'yplace',yplace,'iangle',(i*angle))
 		Qengine.players[i].cord={x:xplace,y:yplace}
 	}
-	//sendBoardState(false);//?????
 }
 
 function determineNextTurnState(maxMove,playerID){
@@ -428,7 +392,6 @@ function nextTurn(){
 		TurnCount +=1 
 		currentTurn=turnOrder[TurnCount]
 		if(currentTurn==-1||currentTurn===undefined){
-			//sendBoardState()
 			console.log("movemose")	
 			currentTurn=-1
 			io.sockets.emit('currentTurn',currentTurn)
@@ -443,7 +406,6 @@ function nextTurn(){
 			updateUsers()
 			sendPersonalData()
 		}else{
-			//currentTurn = (currentTurn + 1) % players.length;
 			for(let i=0;i<players.length;i++){
 				players[i].userData.yourTurn=""
 			}
@@ -451,19 +413,12 @@ function nextTurn(){
 			players[currentTurn].userData.yourTurn='<'
 			message(players[currentTurn], "It is your turn!", gameColor);
 			message(io.sockets,"It is " + players[currentTurn].userData.userName + "'s turn!", gameColor)
-			//sendBoardState()
 			updateUsers()
 			console.log(__line,'update after someone puts tile')
 			io.sockets.emit('currentTurn',0)
 			console.log(__line,'currentTurn, always 0')
-			//players[currentTurn].userData.playedCard=false
 			partTurn=2	 
 		}
-			
-		/*else{
-			io.sockets.emit('currentTurn',-1)
-			message( io.sockets, 'time to move moose' , gameColor)
-		}*/
 	}
 }
 
@@ -494,8 +449,6 @@ function updateUsers(target = io.sockets){
 	}
     console.log(__line,"----------------Done Sending List----------------");
 	
-	//console.log('userList[0]',userList[0].engineData)
-	//console.log('userList[1]',userList[1].engineData)
 	io.sockets.emit('userList', userList);
 }
 
@@ -529,11 +482,6 @@ function updateBoard(socketSend, titleColor, showBoard) { //switches between tit
     };
     socketSend.emit("showBoard", showBoardMessage);
 }
-/*function parse(text){
-	text.splice('+')
-	
-}*/
-
 
 
 function sendBoardState(emitChoice){
@@ -564,16 +512,6 @@ function playersHaveTiles(){ //to check end conditions
 	return have;
 }
 
-/*
-function allSkipped(){
-	var allSkipped = true; //check if everyone has skipped
-	for(var i = 0; i < players.length; i++){
-		if(!players[i].userData.skippedTurn){
-			allSkipped = false;
-		}
-	}
-	return allSkipped;
-}*/
 
 function checkEnd(){
 	//return (!playersHaveTiles() || allSkipped());

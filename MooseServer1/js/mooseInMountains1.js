@@ -308,18 +308,6 @@ class Tile extends Button{
 		}else{
 			console.log('this tile is not selected')
 		}
-		
-		
-		//let validselect=false
-
-		//validselect=validselect||validMove(Qengine.addcord(getcord(reBoardState,myUserlistIndex),this.cord,-1))
-		//validselect=validselect||reBoardState[this.cord.y][this.cord.x]!=-1
-		//if(validselect){
-		//	selected=this
-		//	selected.visible=true
-		//}else{
-		//	console.log("This button has not been overloaded yet!");
-		//}
 	}
 }
 
@@ -363,10 +351,8 @@ class doubleButton{
 		if(direction.path!=this.chosen.path){
 			if(this.chosen.path!=undefined){
 				if(this.chosen.color=='Blue'){
-					//Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowbv,-1)
 					Qengine.unMoveMoose(this.chosen,this.arrowbv)
 				}else{
-					//Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowgv,-1)
 					Qengine.unMoveMoose(this.chosen,this.arrowgv)
 				}
 			}
@@ -376,14 +362,12 @@ class doubleButton{
 		}else{
 			if(this.chosen.color=='Blue'){
 				Qengine.unMoveMoose(this.chosen,this.arrowbv)
-				//Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowb,-1)
+
 			}else{
 				Qengine.unMoveMoose(this.chosen,this.arrowgv)
-				//Qengine.moose.cord=Qengine.addcord(Qengine.moose.cord,this.arrowg,-1)
 			}
 			this.chosen.path=undefined
 		}
-		//console.log(tile)
 	}
 }
 
@@ -392,7 +376,6 @@ class ButtonHalf{
 		this.updateSize(x,y,width,height,direction);
 		this.fillColor = fillColor;
 		this.outlineColor = outlineColor;
-		//this.textColor = textColor;
 		this.textOutlinecolor = textOutlineColor;
 		this.fontSize = fontSize;
 		this.shape = shape;
@@ -438,7 +421,6 @@ class ButtonHalf{
 			ctx.save();
 			ctx.fillStyle = this.fillColor;
 			ctx.strokeStyle = this.outlineColor;
-			//debugger;
 			roundRect(ctx, this.clickArea.minX, this.clickArea.minY, this.width, this.height, this.radius, this.fillColor != undefined, this.outlineColor != undefined);
 			
 			var dotColor = '#000000';
@@ -487,7 +469,6 @@ class selectButton extends Button{
 	}
 	draw(ctx){
 		if(this.highlightColor != ""){
-			//console.log(this.highlightColor);
 			ctx.save();
 			ctx.fillStyle = this.highlightColor;
 			roundRect(ctx, this.x-(this.width/2 + tilePadding), this.y-(this.height/2 + tilePadding), this.width+2*tilePadding, this.height+2*tilePadding, this.width/8,true, false);
@@ -576,7 +557,6 @@ class Board {
 			
 			//border
 			ctx.fillStyle = this.borderColor;
-			//var border = Math.min(this.rowThickness, this.columnThickness);
 			ctx.fillRect(xMin - this.border, yMin - this.border, this.width + 2*this.border, this.height + 2*this.border);
 			if (this.highlightClickable){
 				for(let sideclickArea in this.clickAreas){
@@ -628,8 +608,6 @@ class Board {
 				}
 				y += this.rowThickness;
 			}
-			
-			//drawPerson(ctx,this.x+this.columnThickness,this.y,90,90,'#ff0000');
 			ctx.restore();
 		}
 	}
@@ -713,9 +691,8 @@ function updateFromServer(recievedBoardState){
 		tile.chosen=Qengine.players[i].lastPlayed
 		theirTiles[i]=tile
 	}else{theirTiles[i]={chosen:undefined}}
-
-	//theirTiles.push()
 }
+
 function cord2shape(cord){
 	return cord.x+cord.y*Qengine.boardCol
 }
@@ -835,17 +812,6 @@ socket.on('userList',function(data){
 
 			theirNames.push(namecard)
 		}
-		// if(Qengine.players[data[i].boardID]){
-		// 	let tempLastplayed=Qengine.players[data[i].boardID].lastPlayed
-		// 	Qengine.players[data[i].boardID]=data[i].engineData
-		// 	if(tempLastplayed.ID==Qengine.players[data[i].boardID].lastPlayed.ID){
-		// 		Qengine.players[data[i].boardID].lastPlayed=tempLastplayed
-		// 	}
-		// }else if(data[i].engineData){
-		// 	Qengine.players[data[i].engineData.ID]=data[i].engineData
-		// }else{
-		// 	console.log('no data in')
-		// }
 	}
 	document.getElementById('userlist').innerHTML = userListString;
 	console.table(data);
@@ -882,8 +848,6 @@ socket.on('tiles', function(personalData){
 				// send cardID to the server and option chosen
 			}else{console.log('this tile is unavalible currently')}
 		}
-		//tile.fillColor = newTileColor;
-		//tile.drawOutline(placeholderColor); //placeholder outline
 		shapes[0].concat(tile.subButtons);//1st layer
 		myTiles.push(tile);
 	}
@@ -931,12 +895,6 @@ socket.on('currentTurn',function(currentTurnR){
 	}
 	currentTurn=currentTurnR
 })
-
-// socket.on('boardState', function(recievedBoardState){
-// 	updateFromServer(recievedBoardState);
-// });
-
-
 
 function checkClick(event){
 	var foundClick = false;
@@ -1027,7 +985,6 @@ function draw(){
 		}
 	}
 	for( var i = shapes.length-1; i >= 0; i -= 1){
-		//if(i==0 && shapes[0].length > 0){debugger;}
 		for(var j = 0; j < shapes[i].length; j++){
 			shapes[i][j].draw(ctx);
 		}
@@ -1160,9 +1117,6 @@ function drawPerson(ctx, x, y, width, height, color){
 	ctx.bezierCurveTo(305.124,50.901,281.469,22.895,255.725,22.895);
 	ctx.closePath();
 	ctx.fill();
-	//ctx.stroke();
-	//ctx.restore();
-	//ctx.restore();
 	ctx.restore();
 }
 
@@ -1180,7 +1134,6 @@ function arrowdraw(ctx,x,y,width,height,path){
 		ctx.restore();
 		return;
 	} 
-	//parse path (directions)
 	dmax=parsePath(path)
 	
 	

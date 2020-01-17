@@ -185,14 +185,10 @@ Qengine={
         for(let i=-this.maxMove;i<this.maxMove+1;i++){
             console.log('i',i)
             for(let j=0;j<this.maxMove-Math.abs(i)+1;j++){
-                //console.log('j',j)
-                //console.log('start',startpos)
-                //console.log('check',this.addcord(startpos,{x:i,y:j},1,true))
                 if(this.validMove(player,this.addcord(startpos,{x:i,y:j},1,true))){
                     moveList.push(this.addcord(startpos,{x:i,y:j},1,true))
                 }
                 if(j!=0){
-                    //console.log('check',this.addcord(startpos,{x:i,y:-1*j},1,true))
                     if(this.validMove(player,this.addcord(startpos,{x:i,y:-1*j},1,true))){
                         moveList.push(this.addcord(startpos,{x:i,y:-1*j},1,true))
                     }
@@ -369,7 +365,6 @@ Qengine={
             }
             eq = eq.replace(preStr, solvedStr); // replace parenthetical with value
         }
-        //while (strContain(eq,"distance")) return(replaceAll(eq,'distance','')); 
         
         while (this.strContain(eq, "*") || this.strContain(eq, "/")) {
             var multiply = true;
@@ -397,7 +392,3 @@ try {
 }catch (err){
     console.log("you must be this.players[playerID] side!quick"); 
 }
-//Qengine.players[0]={userName:'spencer',cord:{x:0,y:4}}
-//Qengine.players[1]={userName:'incog'}
-//var cards = new Deck({mean:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0},0,0],dif:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0}]})
-//function theircardadd(){Qengine.movemoose({ID:cards.deal(1)[0],path:undefined,color:undefined},1)}
