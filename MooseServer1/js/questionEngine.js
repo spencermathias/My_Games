@@ -248,19 +248,20 @@ Qengine={
         console.log(text)
         let chosen=0
         for(let i=0;i<this.cardsPlayed.length;i++){
-            console.log(this.cardsPlayed[i].userName)
+            //console.log(this.cardsPlayed[i].userName)
             if(this.strContain(text,this.players[i].userName)){
                 text=text.replace(this.players[i].userName,'')
                 if(this.strContain(text,'blue')||this.strContain(text,'Blue')){
                     console.log('chose blue')
                     chosen=('Blue'==this.players[i].lastPlayed.color)
                 }else if (this.strContain(text,'green')||this.strContain(text,'Green')) {
-                    let lastPathCord={}
+                    // let lastPathCord={}
                     console.log('chose green')
-                    lastPathCord.x=this.parsePath(this.cardsPlayed[i].lastPath).dx
-                    lastPathCord.y=this.parsePath(this.cardsPlayed[i].lastPath).dy
-                    chosen=this.addcord(this.cards.getProperties(this.cardsPlayed[i].lastID).mean,this.cards.getProperties(this.cardsPlayed[i].lastID).dif,-1)
-                    chosen=(Math.abs(this.addcord(lastPathCord,chosen,-1).x)+Math.abs(this.addcord(lastPathCord,chosen,-1).y)==0)
+                    chosen=('Blue'!=this.players[i].lastPlayed.color)
+                    // lastPathCord.x=this.parsePath(this.cardsPlayed[i].lastPath).dx
+                    // lastPathCord.y=this.parsePath(this.cardsPlayed[i].lastPath).dy
+                    // chosen=this.addcord(this.cards.getProperties(this.cardsPlayed[i].lastID).mean,this.cards.getProperties(this.cardsPlayed[i].lastID).dif,-1)
+                    // chosen=(Math.abs(this.addcord(lastPathCord,chosen,-1).x)+Math.abs(this.addcord(lastPathCord,chosen,-1).y)==0)
                 }else if(this.strContain(text,this.cardsPlayed[i].lastPath)){
                     chosen=true
                 }else{chosen=false}

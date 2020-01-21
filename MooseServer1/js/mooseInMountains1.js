@@ -91,9 +91,7 @@ $('#myText')[0].addEventListener('keyup',function(event){
                 	let testcord={}
                 	try{
                 		testcord=JSON.parse(message.substr(first,last))
-                		Qengine.moose.cord=testcord
-                		//Qengine.//testcord.x-=4
-                		//testcord.y-=4
+                		Qengine.mooseReset=testcord
                 		let tested='moose='+message.substr(first,last)
                 		$('#chatlog').append('<div style="color:#009900">'+tested+'</div>'); //appending the data on the page using Jquery 
                 		moosecordget=false
@@ -154,6 +152,7 @@ function allowAudio(){
 
 
 //update in update size as well
+var testbox=undefined
 var tileWidth = 40;
 var tileHeight = 40;
 //var tileWidth = 80 //* window.devicePixelRatio;
@@ -192,6 +191,42 @@ var movePiece=undefined
 var distance2moose=undefined
 var yesNoAsk=undefined
 var myOptions=[]
+var about=' \nTo test your input press "enter" an unofficial result will apear in\n'+
+'the chat log and will evaluate based on the current configuration on\n'+
+'your screen. When you click the submit button the input will be sent \n'+
+'to the server to return if the input is true or false.\n \n'+
+'The posible functions are: \n'+
+'The following arrimatic opporators: + * / ( )\n'+
+'The folowing equivalence opperators: = < >\n'+
+'The following logical opperators: ^ & |\n'+
+'     "^" is XOR opperator "&" is AND opperator "|" is OR opperator\n'+
+' \ndistance(object 1, object 2)\n'+
+'     this function will return the number of spaces a player at object 1\n'+
+'     have to move to reach object 2\n'+
+'       example: distance("E","N") ==> 10\n'+
+'          starts at the letter "E" moves 5 spaces left to the center of the \n'+
+'          board, then moves 5 spaces up to land on the letter "N"\n'+
+'     avalible objects are:\n'+
+'       The moose \n'+
+'           Type \'moose\' or \'Moose\' \n'+
+'       Any player\n'+
+'           Type the name of the player as shown in user list\n'+
+'       The cardinal directions\n'+
+'           Type the first letter of direction in double quotes eg. "N"\n'+
+'       The edges of the board\n'+
+'           Type the full word for the direction in double quotes eg. "South"\n'+
+'\n'+
+'chose(name,color_chosen)\n'+
+'     this function will check to see if the player whose name is the \n'+
+'     parenthesis has on their last turn chosen the color writen in the\n'+
+'     parenthesis\n'+
+'          example:you chose the green side of the moose movement card\n'+
+'          chose(you,green) ==> true\n'+
+'\nthere are things you can do that are not explisitly stated but can be found\n'+
+'using the browser to check to see if the code works. if it works on the browser\n'+
+'will work on the server. Both run the same questionEngine.js document.\n \n'+
+'                                            CLICK TO EXIT'
+
 
 //classes
 class Button {
@@ -231,7 +266,7 @@ class Button {
 				ctx.rotate(Math.atan(this.height/this.width));
 			}
 			if(this.textColor != undefined){
-				ctx.fillText(this.text,0,0);
+				multiLine(ctx,this.text,this.fontSize,this.width)
 			}
 			if(this.textOutline != undefined){
 				ctx.strokeText(this.text, 0, 0);
@@ -289,7 +324,7 @@ class Tile extends Button{
 		
 		if(this.moose){
 			ctx.save();
-			drawPerson(ctx,this.x,this.y,10,10,'#000000' );
+			drawMoose(ctx,this.x,this.y,90,90,"#D4AF3740");
 			ctx.restore();
 			this.moose=false
 		}
@@ -446,7 +481,12 @@ class ButtonHalf{
 		this.parent.click(this.sendOnClick)
 	}	
 }
+class infopage extends Button{
+	constructor(x,y,width,height,text){
+		super(x,y,width,height,text,"#ffff00","#000000","#00ff00")
+	}
 
+}
 class selectButton extends Button{
 	constructor(y,width,text,type){
 		super(300,y,width,100,text,"#ffff00","#000000","#00ff00")
@@ -625,9 +665,10 @@ var board = new Board(canvas.width/2, canvas.height/2, Qengine.boardRow, Qengine
 var selectButtons={yesno:new selectButton(canvas.height*3/4,300,"yes or No?",'yesNo'),
 dist:new selectButton(canvas.height/2,300,"Distance?",'dist'),
 move:new selectButton(canvas.height/4,300,"move","move"),
-found:new selectButton(150,300,"I'm on the moose",'found'),
+found:new selectButton(150,300,"on Moose",'found'),
 submit:new selectButton(canvas.height*3/4,300,'Submit','send'),
-cancel:new selectButton(canvas.height*3/4,300,'Cancel','cancel')}
+cancel:new selectButton(canvas.height*3/4,300,'Cancel','cancel'),
+about:new selectButton(canvas.height,300,'About','about')}
 //socket stuff
 var socket = io(publicAddress); //try public address 
 var trylocal = 0;
@@ -704,11 +745,13 @@ function highlightApplicable(type){
 			selectButtons['yesno'].visible=true;
 			selectButtons['cancel'].visible=false;
 			selectButtons['submit'].visible=false;
+			selectButtons['about'].visible=false
 		break;
 		case 'yesNo':
 			selectButtons['yesno'].visible=false;
 			selectButtons['cancel'].visible=true;
 			selectButtons['submit'].visible=true;
+			selectButtons['about'].visible=true;
 			myOptions=[]
 			board.highlightClickable=false
 		break;
@@ -718,6 +761,7 @@ function highlightApplicable(type){
 			selectButtons['yesno'].visible=true;
 			selectButtons['cancel'].visible=false;
 			selectButtons['submit'].visible=false;
+			selectButtons['about'].visible=false
 		break;
 		case 'found':
 			socket.emit("foundMoose");
@@ -726,13 +770,23 @@ function highlightApplicable(type){
 		case 'send':
 			if ($('#myText').val()!=''){
 				socket.emit('yesnoquestion',$('#myText').val())
+				$('#myText').val()=''
+				selectButtons['cancel'].visible=false;
+				selectButtons['submit'].visible=false;
+				selectButtons['about'].visible=false;
+				selectButtons['yesno'].visible=true;
 			};
 		break;
 		case 'cancel':
 			selectButtons['cancel'].visible=false;
 			selectButtons['submit'].visible=false;
+			selectButtons['about'].visible=false;
 			selectButtons['yesno'].visible=true;
-		break
+		break;
+		case 'about':
+			testbox=new Button(canvas.width/2,canvas.height/2,700,1050,about,"#ffff00","#000000","#00ff00",0,17)
+			testbox.click=function(){testbox=undefined}
+		break;
 	}
 }
 			
@@ -906,6 +960,18 @@ function checkClick(event){
 	//console.log('scale:', scale)
 	var click = {x: event.clientX*scale.x - offset.left, y: event.clientY*scale.y - offset.top};
 	console.log('adjusted click: ', click);
+	//check about click
+	if(testbox!=undefined){	area = testbox.clickArea;
+		if( click.x  < area.maxX){
+			if( click.x > area.minX){
+				if( click.y < area.maxY){
+					if( click.y > area.minY){
+						testbox.click()
+					}
+				}
+			}
+		}
+	}
 	if (!foundClick) {
 		for( i = 0; i < shapes.length; i += 1){
 			for(var j = 0; j < shapes[i].length; j++){
@@ -969,7 +1035,6 @@ function draw(){
 		}
 	}
 	board.draw(ctx);
-	
 	for(i in selectButtons){
 		if(selectButtons[i].visible){
 			shapes[0].push(selectButtons[i])
@@ -1011,7 +1076,7 @@ function draw(){
 			ctx.fillText(theirNames[i].name,theirNames[i].x,theirNames[i].y)
 		}
 	}
-
+	if(testbox!=undefined){testbox.draw(ctx)}
 	setTimeout(draw, 100); //repeat
 }
 draw();
@@ -1032,9 +1097,9 @@ function resizeDrawings(){
 	let j=0
 	let k=0
 	for(buttonType in selectButtons){
-		if(buttonType=='submit'||buttonType=='cancel'){
+		if(buttonType=='submit'||buttonType=='cancel'||buttonType=='about'){
 			k++
-			selectButtons[buttonType].updateSize(300*k+150,canvas.height*1/5,300,100)
+			selectButtons[buttonType].updateSize(300*k,canvas.height*1/5,300,100)
 		}else{
 			j++
 			selectButtons[buttonType].updateSize(300,canvas.height*(j)/5,300,100)
@@ -1244,6 +1309,19 @@ function cord2dpath(cord){
 	}
 	return path
 }
+function multiLine(ctx,text,fontSize,x){
+	var lineHeight = Math.floor(fontSize*1.5);
+	var lines = text.split('\n');
+	var offsetHeight=0
+	if(lines.length>1){
+		offsetHeight=-lines.length*lineHeight/2
+		ctx.textAlign='start'
+		for (var i = 0; i<lines.length; i++){
+		    ctx.fillText(lines[i], -x/2.1, offsetHeight + (i*lineHeight) )
+		}
+	}else{ctx.fillText(text,0,0);}
+}
+
 //temp functions to function as server
 function readyClick(state){
 	endgame=undefined
