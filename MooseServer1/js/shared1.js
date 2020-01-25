@@ -79,8 +79,13 @@ class Deck{
 	}
 
 	returncard(cardID){
-		let index = Math.floor(Math.random()*this.pile.length)
-		this.pile.spice(index,0,cardID)
+		let index=0
+		if(this.pile.length>0){
+			index = Math.floor(Math.random()*this.pile.length)
+			this.pile.spice(index,0,cardID)
+		}else{
+			this.pile.push(cardID)
+		}
 	}
 
 }
