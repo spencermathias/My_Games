@@ -5,21 +5,12 @@ Qengine={
     boardRow:9,
     players:[],
     maxMove:2,
-    reset:function(){
+    resetIt:function(){
         this.moose={cord:{x:4,y:4},path:''}
         this.cardsPlayed=[]
         this.players=[]
         this.maxMove=2
     },
-    // defaultPlayerData:function(){
-    //     return{
-    //         boardID: playerID,
-    //         userName: this.players[playerID].userName,
-    //         color: this.players[playerID].color,
-    //         cord: {x:undefined,y:undefined}
-    //         lastPlayed:{ID:undefined,color:undefined,path:undefined}
-    //     }
-    // },
     mooseReset:function(testCord){
         this.moose.cord=testCord
         let testpath=''

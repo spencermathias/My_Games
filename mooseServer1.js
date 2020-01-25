@@ -122,8 +122,9 @@ io.sockets.on("connection", function(socket) {
 				if(j >= 0){spectators.splice(j, 1)};
 				socket.userData = players[i].userData;
 				players[i] = socket;
-				socket.emit('tiles', socket.userData.tiles);
-				//updateTurnColor();
+				if(Qengine.players[i]){
+					socket.emit('tiles', {tiles:socket.userData.tiles,chosen:Qengine.players[i].lastPlayed});
+				}
 			} else {
 				console.log(__line, "new player");
 			}
@@ -240,7 +241,7 @@ io.sockets.on("connection", function(socket) {
 			gameEnd()
 		}else{
 			message(io.sockets,'moose is located: x'+Qengine.moose.cord.x+' y'+Qengine.moose.cord.y)
-			message(io.sockets,socket.userData.userName+' looses')
+			message(io.sockets,socket.userData.userName+' loses')
 			gameEnd()
 		}
 
@@ -317,8 +318,9 @@ function gameStart() {
 	message(io.sockets, "THE GAME HAS STARTED", gameColor);
 	gameStatus = gameMode.PLAYTILE; //wait for every one to chose a tile via recieveTile
 	//reset players
-	Qengine.reset()//returns bord to default
+	Qengine.resetIt()//returns bord to default
 	Qengine.maxMove=gameMaxMove
+	AllPlayedCards=[]
 	//make deck to play with
 	cards=new shared.Deck({mean:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0},0,0],dif:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0}]})
 	let playerCount=0
@@ -327,7 +329,7 @@ function gameStart() {
 			client.userData.ID=playerCount++
 			//deal cards
 			client.userData.tiles=cards.deal(numberOfTilesForHand)
-			
+			playedCards.push(-1)
 			players.push(client);
 			Qengine.players[client.userData.ID]={
 				userName:client.userData.userName,
@@ -339,6 +341,8 @@ function gameStart() {
 			client.userData.color = spectatorColor;
 		}
 	});
+	AllPlayedCards.push(playedCards)
+	playedCards=[]
 	setStartPosition();
 	updateBoard(io.sockets, readyTitleColor, true); //changes screen from lobby to board
 	currentTurn = -2
@@ -398,7 +402,7 @@ function nextTurn(){
 			gameStatus=gameMode.PLAYTILE
 			message( io.sockets, 'time to move moose' , gameColor)
 			turnOrder=[]
-			partTurn=2
+			Qengine.maxMove=gameMaxMove
 			for(let i=0;i<players.length;i++){
 				players[i].userData.yourTurn=""
 				Qengine.players[i].lastPlayed.ID=-1
@@ -519,11 +523,35 @@ function checkEnd(){
 
 function gameEnd() {
     console.log(__line,"gameEnd");
+    io.sockets.emit('currentTurn',-1)
     //updateBoard(io.sockets, notReadyTitleColor, false);
-
 	message(io.sockets, "THE GAME HAS ENDED", gameColor);
+	let showturns=[]
+	console.log(__line,'AllPlayedCards',AllPlayedCards)
+	console.log(__line, 'Qengine.cardsPlayed',Qengine.cardsPlayed)
+	for(round in AllPlayedCards){
+		let showRound=[]
+		for(player in AllPlayedCards[round]){
+			let cardID=AllPlayedCards[round][player]
+			console.log(__line,'cardID',cardID)
+			if(cardID==-1){
+				showRound.push({
+					ID:-1,
+					path:undefined,
+					color:undefined
+				})
+			}else{
+				showRound.push({
+					ID:cardID,
+					path:Qengine.cardsPlayed[cardID].path,
+					color:Qengine.cardsPlayed[cardID].color
+				})
+			}
+		}
+		showturns.push(showRound)
+	}
+	io.sockets.emit('endState', showturns)
 
-	
     players = [];
 	spectators = [];
     allClients.forEach(function(client) {

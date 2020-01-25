@@ -68,7 +68,12 @@ class Deck{
 	deal(n=1){
 		let hand=[]
 		while(n){
-			hand.push(this.pile.pop());n--;
+			if(this.pile.length>0){
+				hand.push(this.pile.pop());n--;
+			}else{
+				//send -1 on end of pile
+				hand.push(-1);n--;
+			}
 		}
 		return hand
 	}

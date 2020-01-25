@@ -1,7 +1,7 @@
 // put chat log behind a button for mobile; only show the last message for a second
 
 //network definitions
-const localAddress = 'localhost'//'192.168.1.124'
+const localAddress = '192.168.1.124'//'localhost'//
 const localPort = '8080'
 const publicAddress = '184.167.236.159'
 var moosecordget=false
@@ -165,6 +165,8 @@ var selected = undefined;
 var highlightME = undefined;	
 var dropDownList=[]
 var dropDownListIndex=1
+var roundIndex=0
+var roundcontinue=true
 var highlightColor='#005500'
 dropDownList.push('mooseReset={"x":4,"y":4}')
 
@@ -173,10 +175,15 @@ var ctx = canvas.getContext("2d");
 var cards = new Deck({mean:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0},0,0],dif:[{x:0,y:-1},{x:0,y:1},{x:1,y:0},{x:-1,y:0}]})
 
 //initialize variables used in game
+var endgame=undefined
+var arrow=undefined
+var savedCord=[]
+var mooseTracks=[]
 var myTiles = [];
 var theirTiles = [];
 var theirNames = [];
 var boardState = [[]];
+var showTurns=[]
 
 var shapes = [[],[],[]];
 var userList = [];
@@ -323,10 +330,18 @@ class Tile extends Button{
 		}
 		
 		if(this.moose){
-			ctx.save();
-			drawMoose(ctx,this.x,this.y,90,90,"#D4AF3740");
-			ctx.restore();
-			this.moose=false
+			if (arrow==undefined){
+				ctx.save();
+				drawMoose(ctx,this.x,this.y,90,90,"#D4AF3740");
+				ctx.restore();
+				this.moose=false
+			}else{
+				arrowdraw(ctx,arrow.x,arrow.y,board.rowThickness,board.columnThickness,board.columnThickness/10,0,arrow.path)
+				ctx.save();
+				drawMoose(ctx,this.x,this.y,90,90,"#D4AF37");
+				ctx.restore();
+				this.moose=false
+			}
 		}
 	}
 	click(){
@@ -471,7 +486,7 @@ class ButtonHalf{
 			var oneArrowHeight = twoArrowWidth/2;
 			
 			//draw arrows
-			arrowdraw(ctx,this.x,this.y,this.width, this.height, this.shape)
+			arrowDrawCentered(ctx,this.x,this.y,this.width, this.height, this.shape)
 			ctx.restore();
 		}
 	}
@@ -723,7 +738,7 @@ function updateFromServer(recievedBoardState){
 	}
 	if(Qengine.players[i].lastPlayed.ID!=-1){
 		let tile=new doubleButton(Qengine.players[i].lastPlayed.ID, (canvas.width/2) + (tileWidth*2 + 20) * (i-(Qengine.players.length-1)/2) , (tileHeight + 20), tileWidth*2, tileHeight, cards,i)
-		if(i==myUserlistIndex){
+		if(i==myUserlistIndex||endgame){
 			tile.click=function(){
 				console.log('this tile is locked because it is the one you played')
 			}
@@ -784,8 +799,26 @@ function highlightApplicable(type){
 			selectButtons['yesno'].visible=true;
 		break;
 		case 'about':
-			testbox=new Button(canvas.width/2,canvas.height/2,700,1050,about,"#ffff00","#000000","#00ff00",0,17)
+			testbox=new Button(canvas.width/2,canvas.height/2,700,1050,about,"#ffebcd","#000000","#000000",0,17)
 			testbox.click=function(){testbox=undefined}
+		break;
+		case 'next':
+			roundIndex++
+			loadTurn(roundIndex)
+			selected=[]
+		break;
+		case 'previous':
+			roundIndex--
+			loadTurn(roundIndex)
+			selected=[]
+		break;
+		case 'done':
+			if(confirm('restart')){
+				$('#title').css('color', "#ff0000");
+				$('#content').css('display', "flex");
+				$('#gameBoard').css('display', "none");
+				resizeCanvas();
+			}
 		break;
 	}
 }
@@ -825,6 +858,7 @@ socket.on("message",function(message){
 socket.on('userList',function(data){
 	var userListString = '';
 	userList = data;
+	theirNames=[]
 	console.log('userList',userList)
 	for( var i = 0; i < data.length; i++ ){
 		var header = 'div id="userListDiv'+ i + '"';
@@ -873,6 +907,7 @@ socket.on('userList',function(data){
 });
 
 socket.on('showBoard',function(data){
+	Qengine.resetIt()
 	$('#title').css('color', data.titleColor);
 	$('#content').css('display', data.displayTitle);
 	$('#gameBoard').css('display', data.displayGame);
@@ -913,6 +948,23 @@ socket.on('tiles', function(personalData){
 	}
 
 });
+
+socket.on('endState',function(showTurnsR){
+	selectButtons={next:new selectButton(canvas.height*1/4,300,"Next",'next'),
+	previous:new selectButton(canvas.height*2/4,300,"Previous",'previous'),
+	done:new selectButton(canvas.height*3/4,300,"Done",'done')}
+	showTurns=showTurnsR
+	myTiles=[]
+	saveCord()
+	for(i=savedCord.length;i<showTurns.length;i++){
+		saveCord()
+		console.log('savedCord',savedCord)
+	}
+	makeMooseTrack(showTurns)
+	loadTurn(showTurns.length,false)
+	endgame=true
+});
+
 socket.on('currentTurn',function(currentTurnR){
 	console.log('recieved',currentTurnR)
 	console.log('myTurn',myTurn)
@@ -927,13 +979,19 @@ socket.on('currentTurn',function(currentTurnR){
 		}
 		myOptions=[]
 		board.highlightClickable=false
+		roundcontinue=true
+		
 	}else{
+		if(roundcontinue){
+			saveCord()
+		}
 		if(myTurn){
 			for(i in selectButtons){
 				selectButtons[i].visible=true
 			}
 			selectButtons['submit'].visible=false
 			selectButtons['cancel'].visible=false
+			selectButtons['about'].visible=false
 			if(currentTurnR!=0){
 				selectButtons['dist'].visible=false
 				Qengine.maxMove=currentTurnR
@@ -1185,21 +1243,9 @@ function drawPerson(ctx, x, y, width, height, color){
 	ctx.restore();
 }
 
-function arrowdraw(ctx,x,y,width,height,path){
-	ctx.save();	
-	var dotRadius = width*0.05;
-	if(path.length == 0){
-		ctx.fillStyle='red';
-		ctx.beginPath();
-		ctx.moveTo(x,y);
-		ctx.arc(
-			x,y, 
-			dotRadius, 0, 2 * Math.PI, false);
-		ctx.fill();
-		ctx.restore();
-		return;
-	} 
+function arrowDrawCentered(ctx,x,y,width,height,path){
 	dmax=parsePath(path)
+	var dotRadius = width*0.05;
 	
 	
 	var oneArrowWidth = width*0.4
@@ -1219,15 +1265,30 @@ function arrowdraw(ctx,x,y,width,height,path){
 	
 	//draw
 	
+	var curX = x-totArrowWidtht/2-dmax.minx*oneArrowWidth
+	var curY = y-totArrowHeight/2-dmax.miny*oneArrowHeight
+	arrowdraw(ctx,curX,curY,oneArrowWidth,oneArrowHeight,dotRadius,arrowLength,path)
+}
+function arrowdraw(ctx,curX,curY,oneArrowWidth,oneArrowHeight,dotRadius,arrowLength,path){
+	//draw
+	ctx.save();	
+	if(path.length == 0){
+		ctx.fillStyle='red';
+		ctx.beginPath();
+		ctx.moveTo(curX,curY);
+		ctx.arc(
+			curX,curY,
+			dotRadius, 0, 2 * Math.PI, false);
+		ctx.fill();
+		ctx.restore();
+		return;
+	} 
 	var dotColor = '#000000';
 	var lineColor = '#000000';
 	
 	ctx.fillStyle = dotColor;
 	ctx.strokeStyle = lineColor;
 	ctx.lineWidth = dotRadius;
-	
-	var curX = x-totArrowWidtht/2-dmax.minx*oneArrowWidth
-	var curY = y-totArrowHeight/2-dmax.miny*oneArrowHeight
 	//Lines
 	ctx.beginPath();
 	ctx.moveTo(curX,curY)
@@ -1269,8 +1330,8 @@ function arrowdraw(ctx,x,y,width,height,path){
 	}
 	ctx.fillStyle = 'red';
 	ctx.fill();
-	//dots
 	
+	//dots
 	for(var i = path.length-1; i>=0; i--){
 		ctx.beginPath();
 		ctx.fillStyle = 'black';
@@ -1309,6 +1370,48 @@ function cord2dpath(cord){
 	}
 	return path
 }
+function makeMooseTrack(showTurns){
+	let mooseTrack=''
+	//mooseTracks.push({path:mooseTrack,cord:Qengine.moosecord(mooseTrack)})
+	for(turn in showTurns){
+		let delpath=''
+		for(player in showTurns[turn]){
+			if(showTurns[turn][player].path!= undefined){
+				delpath+=showTurns[turn][player].path
+			}
+		}
+		mooseTrack+=delpath
+		mooseTracks.push({path:mooseTrack,cord:Qengine.moosecord(mooseTrack),dpath:delpath})
+	}
+}
+function loadTurn(turnNumber,showArrow=true){
+	if(turnNumber>=showTurns.length){
+		turnNumber=showTurns.length-1
+		roundIndex=showTurns.length-1
+	}else if(turnNumber<0){
+		turnNumber=0
+		roundIndex=0
+	}
+	for(player in showTurns[turnNumber]){
+		let engineData={boardID:player,
+			userName:Qengine.players[player].userName,
+			color:Qengine.players[player].color,
+			cord:savedCord[turnNumber][player],
+			lastPlayed:showTurns[turnNumber][player]
+		}
+		updateFromServer(engineData)
+	}
+	if(showArrow&&turnNumber>0){
+		let moosebefore=shapes[1][cord2shape(mooseTracks[turnNumber-1].cord)]
+		arrow={
+			x:moosebefore.x,
+			y:moosebefore.y,
+			path:mooseTracks[turnNumber].dpath
+		}
+	}else{arrow=undefined}
+	Qengine.moose=mooseTracks[turnNumber]
+}
+
 function multiLine(ctx,text,fontSize,x){
 	var lineHeight = Math.floor(fontSize*1.5);
 	var lines = text.split('\n');
@@ -1321,7 +1424,14 @@ function multiLine(ctx,text,fontSize,x){
 		}
 	}else{ctx.fillText(text,0,0);}
 }
-
+function saveCord(){
+	let roundsavedCord=[]
+	for(player in Qengine.players){
+		roundsavedCord.push(Qengine.players[player].cord)
+		roundcontinue=false
+	}
+	savedCord.push(roundsavedCord)
+}
 //temp functions to function as server
 function readyClick(state){
 	endgame=undefined

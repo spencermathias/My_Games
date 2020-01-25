@@ -1,17 +1,18 @@
-@font-face {
-	font-family: 'Arimo';
-	src: url('../fonts/Arimo-Bold.ttf') format('truetype');
+body {
+	height:100%;
 }
 
 .container { 
-	display:flex;
-	flex-direction: column;
 	position:absolute;
+	margin:0;
 	top: 0;
 	bottom: 0;
 	left: 0;
 	right: 0;
 	background: #cccccc;
+	
+	display: flex;
+	flex-direction: column;
 
 	font-family: "Arial Black", Gadget, Arial, sans-serif;
 	font-style: normal;
@@ -19,25 +20,19 @@
 	font-weight: 900;
 	line-height: 1.25;
 	
-}
-
-#header {
-	display: none; /* flex */
-	border:5px solid #0000ff; 
-	flex-grow: 1;
+	overflow:hidden;
 }
 
 #middle {
+	height:100vh;
 	display: flex;
 	flex-direction: row;
-	flex-grow: 100;
-	flex-basis:auto;
 }
 
 #gameAndOverlay{
 	display: flex;
 	flex-direction: column;
-	width:100%;
+	width:80%;
 }
 
 #content {
@@ -51,37 +46,36 @@
 
 #gameBoard {
 	display: none; /* none */
-	flex-grow:1;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	border:1px solid #ffffff;*/
-	cursor: default;
+	/* cursor: default; */
+	/* border:1px solid #ffffff; */
 }
 
 #sidebar {
-	display: flex;
-	flex-direction: column;
 	/* border: 1px solid #00aa00; */
 	width: 20%;
-	min-width: 200px;
+	/* min-width: 200px; */
 	padding: 5px;
 	color: #FFFFFF;
 	background: #888888;
-	overflow: hidden;
-	height:100%;
 }
-#inputbar{
+
+* { /* keeps boxes from being bigger than they are*/
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+}
+
+#title {
 	display: flex;
-	flex-direction: column;
-	/* border: 1px solid #00aa00; */
-	width: 20%;
-	min-width: 200px;
-	padding: 5px;
-	color: #FFFFFF;
-	background: #888888;
-	overflow: hidden;
-	height:100%;
+	font-family: "Arial Black", Gadget, sans-serif;
+	
+	font-size: 14vw;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	color: #ff0000;
+	cursor: default;
+	background: #444444;
 }
 #myText{
 	display: block;
@@ -93,35 +87,9 @@
 	background: #888888;
 	z-index: 2;
 }
-#footer { 
-	display: none; /* flex */
-	border:5px solid #ff0000;
-	width:100%;
-	flex-grow: 1;
-}
-
-* { /* keeps boxes from being bigger than they are*/
-  -webkit-box-sizing: border-box;
-     -moz-box-sizing: border-box;
-          box-sizing: border-box;
-}
-
-#title {
-	display: flex;
-	/* font-family: "Arial Black", Gadget, sans-serif; */
-	
-	font-size: 14vw;
-	justify-content: center;
-	align-items: center;
-	width: 100%;
-	color: #ff0000;
-	cursor: default;
-	background: #444444;
-}
-
 #subtitle{
 	display: flex;
-	/* font-family: "Arial Black", Gadget, sans-serif; */
+	font-family: "Arial Black", Gadget, sans-serif;
 	
 	font-size: 1vw;
 	justify-content: center;
@@ -133,14 +101,11 @@
 }
 
 #users{
-	display: flex;
-	flex-direction: column;
-	height: 20%;
+	height: 20vh;
 }
 
 #userlist{
-	display: flex;
-	flex-direction: column;
+	height:100%;
 	overflow-y: hidden;
 }
 
@@ -149,21 +114,83 @@
 }
 
 #chat{
-	display: flex;
-	flex-direction: column;
-	height: 90%;
-	overflow-y: hidden;
+	height: 75vh;
 }
 
 #chatlog{
-	display: flex;
-	flex-direction: column;
 	overflow-y: hidden;
 	height: 100%;
 }
 
 #chatlog:hover{
 	/*overflow-y: scroll;/* no need since the scroll bottom locks the scroll bar*/
+}
+
+#bidOverlay{
+	display: none; /*none*/
+	background: rgba(0,0,0,.5);
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	align-self: flex-start;
+	width: 100%;
+}
+
+#bidTitle{
+	display: flex;
+	margin-top: .5vh;
+	font-size: 3vh;
+	max-height: 30px;
+	/* border:1px solid #ffffff; */
+}
+
+#bidArray{
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: row;
+	margin: .5vh;
+	margin-top: 0;
+	margin-bottom: 0;
+	padding: .5vh;
+	width: 100%;
+	/* border:1px solid #ffffff; */
+}
+
+#leadMessage{
+	display: none;
+	color: yellow;
+	font-size: 3vh;
+	max-height: 30px;
+	margin-top: 0;
+	margin-bottom: .5vh;
+	/* border:1px solid #ffffff; */
+}
+
+.bidButton {
+	display: flex;
+	height: 6vw;
+
+	flex-grow: 1;
+	background: #aaaaaa;
+	cursor: default;
+	justify-content: center;
+	align-items: center;
+	flex-direction: row;
+	line-height: 1;
+	font-size: 3vh;
+	border-radius: 4px;
+	
+	margin: .5vh;
+	padding: .5vh;
+}
+
+.bidButton.selected{
+	background: #888888;
+}
+
+.bidButton:hover {
+	background: #888888;
 }
 
 ::-webkit-scrollbar {
