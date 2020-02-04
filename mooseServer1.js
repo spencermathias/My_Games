@@ -4,7 +4,6 @@ var express = require("express");
 var http = require("http");
 var io = require("socket.io");
 var Qengine = require('./MooseServer1/js/questionEngine.js')
-//var shared = require('./MooseServer1/js/shared1.js'); 
 
 var app = express();
 app.use(express.static("./MooseServer1")); //working directory
@@ -577,7 +576,6 @@ class Deck{
 		this.totalCards = constants.shift() //first number is the total number of cards
 			
 		this.divConstants = constants //CONST
-		//this.owner='Deck'
 		this.pile =[]
 		for( let i = 0;i<this.totalCards;i++){this.pile.push(i);}
 		this.shuffle(5)
