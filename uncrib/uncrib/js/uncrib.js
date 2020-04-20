@@ -6,8 +6,8 @@
 
 //network definitions
 const localAddress = '192.168.1.124'
-const localPort = '8080'
-const publicAddress = '184.167.236.159'
+const localPort = '8081'
+const publicAddress = 'alanisboard.ddns.net:8081'
 
 
 window.addEventListener('load', function() {
