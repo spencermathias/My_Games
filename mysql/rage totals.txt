@@ -1,0 +1,3 @@
+gameid: 1
+decrement: 1
+players:8
