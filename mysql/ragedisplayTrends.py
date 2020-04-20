@@ -6,7 +6,7 @@ Created on Mon Apr 20 11:35:10 2020
 """
 
 import matplotlib.pyplot as plt
-import databaseLogin as login
+from mysqlConfig import databaseLogin as login
 
 
 #retrive data from database
